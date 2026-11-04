@@ -1,6 +1,6 @@
 ---
 name: style-library
-description: Pick, customise or create the visual style of a motionforge video from a library of 100 styles in 20 categories (creators, e-commerce, real estate, sports, documentary, education, tech, finance, food, fitness, travel, events, news, business, gaming, kids, fashion, automotive, art direction, nonprofit). Use when a video needs a look (palette, type, texture, framing, motion, edit rhythm, sound) before scenes are built, when the user names a style, a vertical or a reference, or wants their own reusable style. Every style is one STYLE.md in the same 9-section format.
+description: Pick, customise or create the visual style of a motionforge video from a library of 108 styles in 21 categories (data rankings and races, creators, e-commerce, real estate, sports, documentary, education, tech, finance, food, fitness, travel, events, news, business, gaming, kids, fashion, automotive, art direction, nonprofit). Use when a video needs a look (palette, type, texture, framing, motion, edit rhythm, sound) before scenes are built, when the user names a style, a vertical or a reference, or wants their own reusable style. Every style is one STYLE.md in the same 9-section format.
 license: MIT
 ---
 
@@ -33,6 +33,7 @@ The catalogue — 100 styles grouped into 20 categories, one line each, with bes
    * listings, neighbourhoods, maps → *Real estate & maps* (`map-flyover-pins`, `floorplan-draw-on`, `neighborhood-guide`, …)
    * football and other sports → *Football & sports* (`matchday-graphics`, `tactics-board`, `player-stat-card`, …)
    * documentary, history, investigations → *Documentary & storytelling* (`archival-newsreel`, `true-crime-board`, `history-map-campaign`, …)
+   * rankings, races, countdowns, head-to-heads, scale comparisons, data maps → *Data rankings & races* (`race-broadcast`, `race-eras`, `countdown-reveal`, `versus-arena`, `line-race-editorial`, `world-heat-race`, …)
    * how it works, lessons, quizzes → *Education & explainers*; software, repos, AI → *Tech, SaaS & AI*; numbers → *Finance & money* or `data-story`
    * no category fits → *Art direction & design looks* (`swiss-poster`, `riso-print`, `neon-noir`, `collage-zine`, …) carry any topic
    Prefer styles whose engine the project can render (3D styles need `engines/hyperframes/three`).

@@ -1,9 +1,9 @@
 # Style catalogue
 
-100 styles in 20 categories. Every style is a `STYLE.md` in the same format (`_template/STYLE.md`) with an animated preview rendered by the HyperFrames engine from [`examples/styles/`](../../../examples/styles/).
+108 styles in 21 categories. Every style is a `STYLE.md` in the same format (`_template/STYLE.md`) with an animated preview rendered by the HyperFrames engine from [`examples/styles/`](../../../examples/styles/).
 How to pick, customise or create one: [`../SKILL.md`](../SKILL.md). All styles are original motionforge work (MIT); fonts named in them are free (SIL OFL or similar) and are installed from Fontsource, not bundled. Previews use fictional names, places and sample data.
 
-**Categories:** [Creators & personal brands](#creators--personal-brands) · [E-commerce & products](#e-commerce--products) · [Real estate & maps](#real-estate--maps) · [Football & sports](#football--sports) · [Documentary & storytelling](#documentary--storytelling) · [Education & explainers](#education--explainers) · [Tech, SaaS & AI](#tech-saas--ai) · [Finance & money](#finance--money) · [Food & restaurants](#food--restaurants) · [Fitness, health & wellness](#fitness-health--wellness) · [Travel & hospitality](#travel--hospitality) · [Music, events & weddings](#music-events--weddings) · [News & commentary](#news--commentary) · [Business, B2B & local](#business-b2b--local) · [Gaming & esports](#gaming--esports) · [Kids & animation](#kids--animation) · [Fashion & beauty](#fashion--beauty) · [Automotive](#automotive) · [Art direction & design looks](#art-direction--design-looks) · [Nonprofit & causes](#nonprofit--causes)
+**Categories:** [Creators & personal brands](#creators--personal-brands) · [E-commerce & products](#e-commerce--products) · [Real estate & maps](#real-estate--maps) · [Football & sports](#football--sports) · [Documentary & storytelling](#documentary--storytelling) · [Education & explainers](#education--explainers) · [Tech, SaaS & AI](#tech-saas--ai) · [Finance & money](#finance--money) · [Food & restaurants](#food--restaurants) · [Fitness, health & wellness](#fitness-health--wellness) · [Travel & hospitality](#travel--hospitality) · [Music, events & weddings](#music-events--weddings) · [News & commentary](#news--commentary) · [Business, B2B & local](#business-b2b--local) · [Gaming & esports](#gaming--esports) · [Kids & animation](#kids--animation) · [Fashion & beauty](#fashion--beauty) · [Automotive](#automotive) · [Art direction & design looks](#art-direction--design-looks) · [Nonprofit & causes](#nonprofit--causes) · [Data rankings & races](#data-rankings--races)
 
 ## Creators & personal brands
 
@@ -295,3 +295,22 @@ How to pick, customise or create one: [`../SKILL.md`](../SKILL.md). All styles a
 |---|---|---|---|
 | [cause-documentary](cause-documentary/STYLE.md) | Handheld, warm-dark field documentary for a cause: real people in close-up, their words set in a quiet italic serif on warm… | fundraising appeals, programme stories, beneficiary and volunteer testimony | remotion (footage edit) + hyperframes (cards, counters) |
 | [impact-annual](impact-annual/STYLE.md) | A nonprofit's year on warm unbleached paper: tally marks bundle into big totals, project pins drop onto a quiet map,… | annual impact recaps, donor thank-yous, grant and programme reports | hyperframes + three.js (globe opener) |
+
+## Data rankings & races
+
+Rankings and comparisons built from real data: races over decades, countdowns, head-to-heads, scale comparisons and maps. Every style here keeps the source on screen and says when values are interpolated, normalised or estimated. Only `race-broadcast` has a rendered preview so far (16:9, 15.7 s, fictional data); the other seven are specs waiting for their reference scenes.
+
+<table>
+  <tr><td align="center" valign="top" width="25%"><a href="race-broadcast/STYLE.md"><img src="race-broadcast/preview.gif" width="160" alt="race-broadcast preview"></a><br><code>race-broadcast</code><br><sub>Near-black stage, bars that glide past each other, a rolling year odometer, one gold moment per lead change</sub></td><td width="25%"></td><td width="25%"></td><td width="25%"></td></tr>
+</table>
+
+| Style | Look | Best for | Engine |
+|---|---|---|---|
+| [race-broadcast](race-broadcast/STYLE.md) | A broadcast-grade bar chart race: bars glide past each other instead of jumping, the year rolls like an odometer, event cards and a decade scrubber… | brand, company and country rankings over decades; "who sold the most" series | hyperframes (HTML/SVG) |
+| [race-eras](race-eras/STYLE.md) | A ranking race whose whole design ages with the data: 1950s halftone print, 1970s warm film, 1980s neon, 1990s chrome, 2000s gloss, 2010s flat… | century-long brand and product histories, nostalgia-led rankings | hyperframes (+ canvas halftone) |
+| [countdown-reveal](countdown-reveal/STYLE.md) | A premium top-ten countdown: giant outlined rank numerals, each entry a lit card on a slow camera dolly, number one held behind a curtain of light… | "top 10" lists with data, best-sellers, richest, most-streamed | hyperframes + three.js (flat fallback) |
+| [versus-arena](versus-arena/STYLE.md) | Two contenders face off across a diagonal split; twin bars shoot to the centre round by round and a tug-of-war meter keeps score… | brand vs brand, product vs product, country vs country | hyperframes (HTML/SVG) |
+| [brand-saga](brand-saga/STYLE.md) | One brand's life on a gallery wall: the camera dollies through chapters while a sales curve draws itself along the floor of the frame… | single-brand histories, rise-and-fall stories, anniversary films | hyperframes + three.js or 2.5D parallax |
+| [scale-ladder](scale-ladder/STYLE.md) | Big numbers made physical: amounts become areas and blocks on one shared scale, the camera pulls back one order of magnitude at a time… | revenue vs GDP, net worth, market caps, "how big is X" | hyperframes + three.js (orthographic) or SVG |
+| [line-race-editorial](line-race-editorial/STYLE.md) | A newspaper-grade line chart racing through time on warm paper, labels riding the line tips, one story line in red, annotations at turning points… | trends of 2 to 8 series, market shares, "how X overtook Y" | hyperframes (SVG) |
+| [world-heat-race](world-heat-race/STYLE.md) | A dark world map that heats up country by country, a heat front outlining growth each year, the top five racing in a side panel… | country rankings over time, consumption, adoption, production | hyperframes (SVG map, Natural Earth) |

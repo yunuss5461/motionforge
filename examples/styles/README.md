@@ -34,3 +34,4 @@ ffmpeg -i renders/pixel-quest.mp4 -vf "fps=15,scale=360:-1:flags=lanczos,split[a
   small bitmap font drawn in the scene itself.
 - App UI, numbers and characters in the previews are fictional placeholders; data-story labels its
   values as sample data.
+- `race-broadcast` is the exception to the 4.5-second portrait format: a race needs time and width, so its scene is 1920×1080 and 15.7 s, and its `meta.json` carries `"size": [1920, 1080]`. Its GIF uses `scale=480:-1`, `fps=12` and a 7.5-second excerpt (`-ss 4.6 -t 7.5`) that includes two lead changes.

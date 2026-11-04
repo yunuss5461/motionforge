@@ -1,0 +1,274 @@
+<!doctype html>
+<!--
+  motionforge style preview: race-broadcast (16:9)
+  © 2026 motionforge contributors, MIT
+  A broadcast-grade bar chart race. Rank swaps glide (rank is smoothed over a short window of
+  past samples, so every frame is still a pure function of t), values follow monotone cubic
+  interpolation between yearly data points, the year rolls like an odometer, event cards and a
+  decade scrubber carry the story, and a lead change gets one accent moment.
+  All brands, events and numbers are fictional.
+-->
+<html lang="en" data-resolution="landscape">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<script src="assets/vendor/gsap.min.js"></script>
+<style>
+@font-face{font-family:"Inter";font-weight:500;src:url(assets/fonts/inter-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:700;src:url(assets/fonts/inter-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:800;src:url(assets/fonts/inter-latin-800-normal.woff2) format("woff2")}
+@font-face{font-family:"Instrument Serif";font-style:italic;font-weight:400;src:url(assets/fonts/instrument-serif-latin-400-italic.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:500;src:url(assets/fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2")}
+:root{--bg:#0A0C11;--ink:#F3F1EC;--muted:#8B8F99;--faint:#2A2E37;--line:#1C2029;--accent:#F2C14E;
+  --f-display:"Inter",sans-serif;--f-serif:"Instrument Serif",serif;--f-mono:"JetBrains Mono",monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;background:var(--bg);overflow:hidden}
+#root{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--bg);font-family:var(--f-display);color:var(--ink);font-feature-settings:"tnum" 1,"lnum" 1}
+#era{position:absolute;inset:0;pointer-events:none}
+#stage{position:absolute;inset:0;transform-origin:760px 520px}
+#vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(1400px 900px at 45% 45%,transparent 55%,rgba(0,0,0,.55) 100%)}
+#grain{position:absolute;inset:0;pointer-events:none;opacity:.035;mix-blend-mode:overlay}
+#kicker{position:absolute;left:120px;top:78px;font:700 17px/1 var(--f-display);letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+#kicker i{display:inline-block;width:28px;height:2px;background:var(--accent);vertical-align:middle;margin-right:14px;transform-origin:left center}
+#headline{position:absolute;left:118px;top:106px;font:800 58px/1.08 var(--f-display);letter-spacing:-.035em;white-space:nowrap}
+#headline .w{display:inline-block;overflow:hidden;vertical-align:top;padding:0 .02em .08em}
+#headline .w span{display:inline-block}
+#headline .serif{font-family:var(--f-serif);font-style:italic;font-weight:400;letter-spacing:-.01em;color:var(--accent);padding-right:.06em}
+#grid{position:absolute;left:0;top:0;width:1920px;height:1080px}
+.tick{position:absolute;top:212px;height:664px;width:1px;background:var(--line)}
+.tick b{position:absolute;top:-30px;left:0;transform:translateX(-50%);font:500 15px/1 var(--f-mono);color:#5D626D;white-space:nowrap}
+.slot{position:absolute;left:120px;width:40px;font:500 20px/56px var(--f-mono);color:#4B505B;text-align:left}
+.row{position:absolute;left:0;top:0;width:1920px;height:56px;will-change:transform,opacity}
+.name{position:absolute;left:144px;width:240px;text-align:right;font:700 25px/56px var(--f-display);letter-spacing:-.01em;white-space:nowrap}
+.bar{position:absolute;left:404px;top:0;height:56px;border-radius:6px 10px 10px 6px;overflow:hidden}
+.bar .sheen{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 46%,rgba(0,0,0,.14))}
+.bar .sweep{position:absolute;top:-20px;bottom:-20px;width:180px;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-18deg)}
+.ring{position:absolute;left:400px;top:-4px;height:64px;border-radius:10px 14px 14px 10px;border:2px solid var(--ink);opacity:0}
+.logo{position:absolute;top:6px;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 21px/1 var(--f-display);color:#fff;box-shadow:0 0 0 3px rgba(10,12,17,.55)}
+.val{position:absolute;top:0;font:700 25px/56px var(--f-display);letter-spacing:-.01em;white-space:nowrap}
+.val small{font:500 16px/1 var(--f-display);color:var(--muted);margin-left:6px;letter-spacing:0}
+.chip{position:absolute;top:13px;height:30px;padding:0 12px;border-radius:15px;background:#0A0C11;color:var(--accent);border:1px solid rgba(242,193,78,.6);font:800 14px/30px var(--f-display);letter-spacing:.08em;white-space:nowrap;opacity:0;transform-origin:left center}
+#panel{position:absolute;left:1500px;top:212px;width:330px}
+#yearlabel{font:700 15px/1 var(--f-display);letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+#year{position:relative;margin-top:10px;height:132px;display:flex;font:800 124px/132px var(--f-display);letter-spacing:0;overflow:hidden}
+#year .col{position:relative;width:78px;height:132px;overflow:hidden;-webkit-mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent)}
+#year .strip{position:absolute;left:0;top:0;width:100%}
+#year .strip div{height:132px;text-align:center}
+#event{position:absolute;left:0;top:216px;width:320px;padding:18px 18px 18px 22px;border-radius:12px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);opacity:0}
+#event .stripe{position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:2px}
+#event .ey{font:500 15px/1 var(--f-mono);color:var(--muted)}
+#event .et{margin-top:10px;font:500 21px/1.32 var(--f-display);color:var(--ink)}
+#total{position:absolute;left:0;top:452px;width:320px}
+#total .tl{font:700 15px/1 var(--f-display);letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+#total .tv{margin-top:10px;font:700 34px/1 var(--f-display);letter-spacing:-.02em}
+#total .tv small{font:500 17px/1 var(--f-display);color:var(--muted);margin-left:6px}
+#spark{margin-top:14px}
+#timeline{position:absolute;left:120px;top:952px;width:1700px;height:60px}
+#tl-base{position:absolute;left:0;top:10px;width:1700px;height:2px;background:var(--faint)}
+#tl-fill{position:absolute;left:0;top:10px;height:2px;background:var(--ink);transform-origin:left center}
+#tl-head{position:absolute;top:4px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 5px rgba(243,241,236,.12)}
+.dec{position:absolute;top:30px;transform:translateX(-50%);font:500 15px/1 var(--f-mono);color:#5D626D}
+.dtick{position:absolute;top:6px;width:1px;height:10px;background:#3A3F49}
+.ev{position:absolute;top:5px;width:12px;height:12px;margin-left:-6px;transform:rotate(45deg);border:2px solid var(--bg)}
+#source{position:absolute;left:120px;top:1030px;font:500 15px/1 var(--f-display);color:#5D626D;letter-spacing:.01em}
+#final{position:absolute;left:1500px;top:664px;width:330px;opacity:0}
+#final .fl{font:700 15px/1 var(--f-display);letter-spacing:.2em;color:var(--accent);text-transform:uppercase}
+#final .ft{margin-top:12px;font:400 40px/1.1 var(--f-serif);font-style:italic}
+#final .fs{margin-top:10px;font:500 19px/1.4 var(--f-display);color:var(--muted)}
+#fade{position:absolute;left:0;top:836px;width:1500px;height:110px;background:linear-gradient(180deg,rgba(10,12,17,0),var(--bg) 70%);pointer-events:none}
+</style>
+</head>
+<body>
+<div id="root" class="clip" data-composition-id="main" data-start="0" data-duration="15.7" data-width="1920" data-height="1080" data-track-index="0">
+  <div id="era"></div>
+  <div id="stage">
+    <div id="kicker"><i></i>Best-selling cola brands</div>
+    <div id="headline"></div>
+    <div id="grid"></div>
+    <div id="rows"></div>
+    <div id="panel">
+      <div id="yearlabel">Year</div>
+      <div id="year"></div>
+      <div id="event"><div class="stripe"></div><div class="ey"></div><div class="et"></div></div>
+      <div id="total"><div class="tl">Total market</div><div class="tv"></div><svg id="spark" width="300" height="70" viewBox="0 0 300 70"><path id="sparkfill" fill="rgba(243,241,236,.06)"/><path id="sparkline" fill="none" stroke="#F3F1EC" stroke-width="2"/></svg></div>
+    </div>
+    <div id="final"><div class="fl">Final standings · 2020</div><div class="ft"></div><div class="fs"></div></div>
+    <div id="timeline"><div id="tl-base"></div><div id="tl-fill"></div><div id="tl-head"></div></div>
+    <div id="source">Source: fictional sample data · motionforge style preview</div>
+  </div>
+  <div id="vignette"></div>
+  <canvas id="grain" width="512" height="512" style="width:1920px;height:1080px"></canvas>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ---------------- timing ---------------- */
+const INTRO=1.6, SPY=0.17, Y0=1950, Y1=2020, NY=Y1-Y0, OUTRO=2.2;
+const DUR=+(INTRO+NY*SPY+OUTRO).toFixed(2);           // 15.7
+const TOPN=8, SLOT=78, TOP=212, BAR0=404, BARMAX=1000;
+
+/* ---------------- fictional data (yearly, million cases) ---------------- */
+const sig=x=>1/(1+Math.exp(-x));
+const BRANDS=[
+ {id:"kolara",name:"Kolara",color:"#D9544D",f:y=>(120+260*sig((y-1960)/6))*(1-0.42*sig((y-1990)/5))},
+ {id:"fizzo", name:"Fizzo", color:"#3F6FD8",f:y=>(40+520*sig((y-1972)/5))*(1-0.32*sig((y-2008)/4))},
+ {id:"bubbla",name:"Bubbla",color:"#2FA46F",f:y=>y<1975?0:600*sig((y-1996)/4)*(1-0.22*sig((y-2016)/3))},
+ {id:"zesto", name:"Zesto", color:"#E59A2E",f:y=>y<1985?0:30+640*sig((y-2010)/3.5)},
+ {id:"nordik",name:"Nordik",color:"#4FA3C7",f:y=>(80+140*sig((y-1965)/8))*(1-0.5*sig((y-1990)/6))},
+ {id:"solva", name:"Solva", color:"#8C5CC9",f:y=>60*sig((y-1955)/3)+180*sig((y-1983)/6)},
+ {id:"mirra", name:"Mirra", color:"#D3558F",f:y=>200*sig((y-1978)/5)*(1-0.6*sig((y-2000)/5))+30},
+ {id:"vexo",  name:"Vexo",  color:"#1FA59A",f:y=>y<1990?0:300*sig((y-2001)/4)},
+ {id:"lumo",  name:"Lumo",  color:"#A89466",f:y=>90+100*sig((y-1990)/10)},
+ {id:"ardo",  name:"Ardo",  color:"#7C8594",f:y=>150*sig((y-1958)/4)*(1-0.7*sig((y-1975)/4))+20}];
+BRANDS.forEach(b=>{b.Y=[];for(let i=0;i<=NY;i++)b.Y.push(Math.round(b.f(Y0+i)*10)/10);});
+const EVENTS=[
+ {y:1962,b:"kolara",t:"Kolara puts the first ring-pull can on shelves"},
+ {y:1976,b:"bubbla",t:"Bubbla enters the market with one flavour"},
+ {y:1986,b:"zesto", t:"Zesto launches in three cities"},
+ {y:1996,b:"bubbla",t:"Bubbla's zero-sugar line goes national"},
+ {y:2009,b:"zesto", t:"Zesto expands to 60 countries"}];
+
+/* ---------------- monotone cubic interpolation (Fritsch–Carlson) ---------------- */
+BRANDS.forEach(b=>{const y=b.Y,n=y.length,d=[],m=new Array(n);
+  for(let i=0;i<n-1;i++)d.push(y[i+1]-y[i]);
+  m[0]=d[0];m[n-1]=d[n-2];
+  for(let i=1;i<n-1;i++)m[i]=d[i-1]*d[i]<=0?0:(d[i-1]+d[i])/2;
+  for(let i=0;i<n-1;i++){if(d[i]===0){m[i]=m[i+1]=0;continue}const a=m[i]/d[i],c=m[i+1]/d[i],h=a*a+c*c;if(h>9){const s=3/Math.sqrt(h);m[i]=s*a*d[i];m[i+1]=s*c*d[i];}}
+  b.M=m;});
+function val(b,x){if(x<=0)return b.Y[0];if(x>=NY)return b.Y[NY];const i=Math.floor(x),s=x-i,y0=b.Y[i],y1=b.Y[i+1],m0=b.M[i],m1=b.M[i+1],s2=s*s,s3=s2*s;
+  return Math.max(0,(2*s3-3*s2+1)*y0+(s3-2*s2+s)*m0+(-2*s3+3*s2)*y1+(s3-s2)*m1);}
+
+/* ---------------- helpers ---------------- */
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const seg=(t,a,b)=>clamp((t-a)/(b-a));
+const eo3=x=>1-Math.pow(1-x,3), eio=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const back=x=>{const c=1.7;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const smooth=x=>x*x*(3-2*x);
+const prog=t=>clamp((t-INTRO)/SPY,0,NY);              // continuous years since 1950
+const fmt=v=>v.toLocaleString("en-US",{minimumFractionDigits:1,maximumFractionDigits:1});
+const hex=(h,a)=>{const n=parseInt(h.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`};
+const shade=(h,k)=>{const n=parseInt(h.slice(1),16);const f=c=>Math.round(c*k);return `rgb(${f(n>>16&255)},${f(n>>8&255)},${f(n&255)})`};
+function rng(seed){let x=seed>>>0||0x9e3779b9;return()=>{x^=x<<13;x>>>=0;x^=x>>>17;x^=x<<5;x>>>=0;return x/4294967296}}
+
+/* rank of every brand at a time t (0 = leader); ties broken by id so order is stable */
+function ranks(t){const x=prog(t);const v=BRANDS.map((b,i)=>[val(b,x),b.id,i]);v.sort((a,c)=>c[0]-a[0]||(a[1]<c[1]?-1:1));const r=new Array(BRANDS.length);v.forEach((e,k)=>r[e[2]]=k);return{r,max:v[0][0],lead:v[0][2]}}
+/* smoothed rank: weighted mean of ranks over the last 0.36 s, so swaps glide instead of jumping */
+const NS=12,DT=0.03,W=[];for(let k=0;k<NS;k++)W.push(Math.pow(1-k/NS,2));const WS=W.reduce((a,c)=>a+c,0);
+function smoothRanks(t){const acc=new Array(BRANDS.length).fill(0);let mx=0;for(let k=0;k<NS;k++){const s=ranks(Math.max(0,t-k*DT));s.r.forEach((r,i)=>acc[i]+=W[k]*r);mx+=W[k]*s.max}return{r:acc.map(a=>a/WS),max:mx/WS}}
+
+/* lead changes, found once at load by sampling (deterministic) */
+const LEADS=[];{let prev=null;for(let x=0;x<=NY;x+=0.01){let bi=0,bv=-1;BRANDS.forEach((b,i)=>{const v=val(b,x);if(v>bv){bv=v;bi=i}});if(prev!==null&&bi!==prev)LEADS.push({t:INTRO+x*SPY,i:bi});prev=bi}}
+
+/* ---------------- build DOM ---------------- */
+const $=s=>document.querySelector(s);
+const head=$("#headline");
+[["The",0],["cola",0],["wars,",0],["1950",1],["to",1],["2020",1]].forEach(([w,s])=>{const o=document.createElement("span");o.className="w"+(s?" serif":"");o.innerHTML=`<span>${w}</span>`;head.appendChild(o);head.appendChild(document.createTextNode(" "))});
+const words=[...head.querySelectorAll(".w span")];
+
+for(let k=0;k<TOPN;k++){const s=document.createElement("div");s.className="slot";s.style.top=(TOP+k*SLOT)+"px";s.textContent=String(k+1).padStart(2,"0");$("#rows").appendChild(s)}
+const rows=BRANDS.map(b=>{const r=document.createElement("div");r.className="row";
+  r.innerHTML=`<div class="name">${b.name}</div><div class="ring"></div><div class="bar" style="background:${b.color}"><div class="sheen"></div><div class="sweep"></div></div><div class="logo" style="background:${shade(b.color,.62)}">${b.name[0]}</div><div class="val"></div><div class="chip">NEW #1</div>`;
+  $("#rows").appendChild(r);return{el:r,bar:r.querySelector(".bar"),sweep:r.querySelector(".sweep"),ring:r.querySelector(".ring"),logo:r.querySelector(".logo"),val:r.querySelector(".val"),chip:r.querySelector(".chip"),name:r.querySelector(".name")}});
+
+const TICKPOOL=[];for(let i=0;i<24;i++){const d=document.createElement("div");d.className="tick";d.innerHTML="<b></b>";$("#grid").appendChild(d);TICKPOOL.push(d)}
+
+const yearEl=$("#year");const cols=[];for(let k=0;k<4;k++){const c=document.createElement("div");c.className="col";const s=document.createElement("div");s.className="strip";for(let d=0;d<=10;d++){const e=document.createElement("div");e.textContent=d%10;s.appendChild(e)}c.appendChild(s);yearEl.appendChild(c);cols.push(s)}
+
+const TL=$("#timeline"),TW=1700,tx=y=>(y-Y0)/NY*TW;
+for(let y=Y0;y<=Y1;y+=10){const l=document.createElement("div");l.className="dec";l.style.left=tx(y)+"px";l.textContent=y;TL.appendChild(l);const k=document.createElement("div");k.className="dtick";k.style.left=tx(y)+"px";TL.appendChild(k)}
+const evDots=EVENTS.map(e=>{const d=document.createElement("div");d.className="ev";d.style.left=tx(e.y)+"px";d.style.background=BRANDS.find(b=>b.id===e.b).color;TL.appendChild(d);return d});
+
+/* static grain, seeded */
+{const c=$("#grain"),g=c.getContext("2d"),im=g.createImageData(512,512),r=rng(7);for(let i=0;i<im.data.length;i+=4){const v=r()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}g.putImageData(im,0,0)}
+
+/* totals for the sparkline */
+const TOT=[];for(let i=0;i<=NY;i++)TOT.push(BRANDS.reduce((a,b)=>a+b.Y[i],0));const TMAX=Math.max(...TOT)*1.05;
+
+/* era tint: warm 50s, orange 70s, teal 90s, blue 2010s */
+const ERA=[[1950,[214,160,90]],[1970,[214,110,70]],[1990,[60,160,150]],[2010,[70,110,210]],[2020,[90,100,220]]];
+function eraColor(y){for(let i=0;i<ERA.length-1;i++){const[a,ca]=ERA[i],[b,cb]=ERA[i+1];if(y<=b){const s=smooth(clamp((y-a)/(b-a)));return ca.map((c,k)=>Math.round(c+(cb[k]-c)*s))}}return ERA[ERA.length-1][1]}
+
+const LADDER=[];for(let e=0;e<5;e++)[1,2,5].forEach(m=>LADDER.push(m*Math.pow(10,e)));
+
+/* ---------------- draw(t): every visible property is a function of t ---------------- */
+function draw(t){
+  const x=prog(t), yf=Y0+x;
+  // intro
+  $("#kicker").style.opacity=eo3(seg(t,.05,.45));$("#kicker").style.transform=`translateY(${(1-eo3(seg(t,.05,.45)))*14}px)`;
+  $("#kicker i").style.transform=`scaleX(${eo3(seg(t,.15,.6))})`;
+  words.forEach((w,i)=>{const p=seg(t,.22+i*.075,.22+i*.075+.55);w.style.transform=`translateY(${(1-back(p))*105}%)`});
+
+  // ranks, scale, camera
+  const S=smoothRanks(t);const maxScale=Math.max(40,S.max*1.1);
+  let push=0;LEADS.forEach(L=>{const p=seg(t,L.t,L.t+1.3);push+=Math.sin(Math.PI*p)*.016});
+  $("#stage").style.transform=`scale(${1+push})`;
+
+  // grid ticks with cross-faded steps
+  const target=maxScale/4;let k=0;while(k<LADDER.length-1&&LADDER[k+1]<=target)k++;const s1=LADDER[k],s2=LADDER[Math.min(k+1,LADDER.length-1)];
+  const w=s2===s1?0:clamp((Math.log(target)-Math.log(s1))/(Math.log(s2)-Math.log(s1)));
+  const gridIn=eo3(seg(t,.6,1.2));let pi=0;const seen=new Map();
+  [[s1,1-w],[s2,w]].forEach(([st,a])=>{for(let v=st;v<maxScale;v+=st){const key=Math.round(v*1000);seen.set(key,Math.max(seen.get(key)||0,a))}});
+  for(const[key,a]of seen){if(pi>=TICKPOOL.length)break;const v=key/1000,px=BAR0+v/maxScale*BARMAX,edge=clamp((BAR0+BARMAX-px)/80);const d=TICKPOOL[pi++];d.style.left=px+"px";d.style.opacity=a*edge*gridIn;d.firstChild.style.opacity=clamp((a-.45)/.3);d.firstChild.textContent=v>=1000?(v/1000)+"B":v+"M"}
+  for(;pi<TICKPOOL.length;pi++)TICKPOOL[pi].style.opacity=0;
+
+  // rows
+  const lead=ranks(t).lead;
+  BRANDS.forEach((b,i)=>{const R=rows[i],r=S.r[i],v=val(b,x);
+    const grow=eo3(seg(t,.8+Math.min(r,8)*.06,.8+Math.min(r,8)*.06+.65));
+    const w=Math.max(0,v/maxScale*BARMAX*grow);const vis=clamp((TOPN-r)/.6)*clamp(v/3);
+    R.el.style.transform=`translateY(${TOP+r*SLOT}px)`;R.el.style.opacity=vis;
+    R.bar.style.width=Math.max(w,0)+"px";
+    const lx=BAR0+Math.max(w,56)-50;R.logo.style.left=lx+"px";R.logo.style.opacity=clamp(w/40);
+    R.val.style.left=(BAR0+Math.max(w,56)+16)+"px";R.val.innerHTML=`${fmt(v*grow)}<small>M</small>`;
+    R.name.style.color=i===lead&&t>INTRO?"#FFFFFF":"#D9D6CF";
+    // lead change: chip + sweep on the new leader
+    let chip=0,sw=-1;LEADS.forEach(L=>{if(L.i!==i)return;const p=seg(t,L.t,L.t+2.2);if(p>0&&p<1){chip=p<.15?back(p/.15):p>.8?1-eo3((p-.8)/.2):1;sw=seg(t,L.t,L.t+.7)}});
+    R.chip.style.left=(BAR0+16)+"px";R.chip.style.opacity=clamp(chip);R.chip.style.transform=`scale(${.6+.4*chip})`;
+    R.sweep.style.left=(sw<0||sw>=1?-400:(-200+eio(sw)*(w+400)))+"px";
+    // event highlight ring
+    let ring=0;EVENTS.forEach(e=>{if(e.b!==b.id)return;const t0=INTRO+(e.y-Y0)*SPY;ring=Math.max(ring,Math.sin(Math.PI*seg(t,t0,t0+SPY*6))*.9)});
+    R.ring.style.width=(Math.max(w,56)+8)+"px";R.ring.style.opacity=ring*clamp((w-50)/70);});
+
+  // year odometer
+  const yi=Math.floor(yf),fr=yf-yi,roll=x>=NY?0:smooth(seg(fr,.62,1));const dig=String(yi).split("").map(Number);
+  const pos=[dig[0]+(dig[1]===9&&dig[2]===9&&dig[3]===9?roll:0),dig[1]+(dig[2]===9&&dig[3]===9?roll:0),dig[2]+(dig[3]===9?roll:0),dig[3]+roll];
+  cols.forEach((c,k)=>c.style.transform=`translateY(${-pos[k]*132}px)`);
+  const pIn=eo3(seg(t,.9,1.5));$("#panel").style.opacity=pIn;$("#panel").style.transform=`translateY(${(1-pIn)*30}px)`;
+
+  // event card: shows for ~2.6 years after each event
+  let shown=null,ep=0;EVENTS.forEach(e=>{const t0=INTRO+(e.y-Y0)*SPY,t1=t0+SPY*2.6+.9;if(t>=t0&&t<t1){shown=e;ep=t<t0+.45?eo3(seg(t,t0,t0+.45)):t>t1-.4?1-seg(t,t1-.4,t1):1}});
+  const ev=$("#event");if(shown){const b=BRANDS.find(q=>q.id===shown.b);ev.querySelector(".stripe").style.background=b.color;ev.querySelector(".ey").textContent=shown.y;ev.querySelector(".et").textContent=shown.t}
+  ev.style.opacity=shown?ep:0;ev.style.transform=`translateX(${(1-ep)*36}px)`;
+
+  // total market + sparkline
+  const tot=BRANDS.reduce((a,b)=>a+val(b,x),0);$("#total .tv").innerHTML=`${fmt(tot)}<small>M cases</small>`;
+  let d="";const n=Math.floor(x);for(let i=0;i<=n;i++)d+=(i?"L":"M")+(i/NY*300).toFixed(1)+" "+(66-TOT[i]/TMAX*60).toFixed(1);
+  d+="L"+(x/NY*300).toFixed(1)+" "+(66-tot/TMAX*60).toFixed(1);$("#sparkline").setAttribute("d",d);$("#sparkfill").setAttribute("d",d+`L${(x/NY*300).toFixed(1)} 70L0 70Z`);
+  const outro=eo3(seg(t,INTRO+NY*SPY+.2,INTRO+NY*SPY+.9));$("#total").style.opacity=1-outro;
+
+  // final card
+  if(outro>0){const order=BRANDS.map((b,i)=>[val(b,NY),b]).sort((a,c)=>c[0]-a[0]);$("#final .ft").textContent=`${order[0][1].name} leads with ${fmt(order[0][0])}M`;$("#final .fs").textContent=`${order[1][1].name} second, ${order[2][1].name} third. Three different leaders in 70 years.`}
+  $("#final").style.opacity=outro;$("#final").style.transform=`translateY(${(1-outro)*24}px)`;
+
+  // timeline
+  const tIn=eo3(seg(t,.7,1.5));$("#timeline").style.opacity=tIn;const hx=x/NY*TW;
+  $("#tl-fill").style.width=hx+"px";$("#tl-head").style.left=hx+"px";
+  evDots.forEach((dd,i)=>{const passed=x>=EVENTS[i].y-Y0;dd.style.opacity=passed?1:.35});
+
+  // era tint
+  const c=eraColor(yf).join(",");$("#era").style.background=`radial-gradient(1100px 700px at 18% 0%, rgba(${c},.20), rgba(${c},0) 70%), radial-gradient(900px 600px at 100% 100%, rgba(${c},.08), rgba(${c},0) 70%)`;
+}
+
+/* ---------------- HyperFrames contract: one paused timeline ---------------- */
+const proxy={t:0};
+const tl=gsap.timeline({paused:true});
+tl.to(proxy,{t:DUR,duration:DUR,ease:"none",onUpdate:()=>draw(proxy.t)},0);
+window.__timelines=window.__timelines||{};window.__timelines.main=tl;
+window.DUR=DUR;
+window.__seek=t=>{tl.seek(t,false);proxy.t=t;draw(t)};
+document.fonts.ready.then(()=>{draw(0);window.READY=true});
+})();
+</script>
+</body>
+</html>

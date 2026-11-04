@@ -1,0 +1,1 @@
+{ "id": "race-broadcast", "name": "race-broadcast", "fonts": ["@fontsource/inter", "@fontsource/instrument-serif", "@fontsource/jetbrains-mono"], "three": false, "size": [1920, 1080] }
