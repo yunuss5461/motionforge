@@ -1,0 +1,1 @@
+{ "id": "main", "name": "fatih-donemi", "fonts": ["@fontsource/inter", "@fontsource/instrument-serif", "@fontsource/jetbrains-mono"], "three": false, "size": [1920, 1080], "fps": 30, "duration": 75, "vendor": ["gsap (npm)", "topojson-client@3.1.0 (npm)", "world-atlas@2.0.2 land-50m.json wrapped as assets/vendor/land-50m.js"] }
