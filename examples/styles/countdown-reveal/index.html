@@ -1,0 +1,377 @@
+<!doctype html>
+<!--
+  motionforge style preview: countdown-reveal (16:9, 11 s excerpt)
+  © 2026 motionforge contributors, MIT
+  A premium top-ten countdown, flat HTML fallback: rank 3 leaves on a parallax dolly, rank 2 arrives
+  (outlined numeral draws, card rises and tilts, the stat counts while the numeral fills bottom to top),
+  the screen goes to black for 0.4 s, a gold light curtain opens from the centre to reveal number one
+  (the only place gold appears), the count lands with an impact, then all ten cards fold into a 5 x 2 wall.
+  Every frame is a pure function of t. The spec asks for Anton on the numerals; Anton is not bundled, so
+  the numerals are Inter 800 glyph outlines (extracted once from the Fontsource file, inlined as SVG paths).
+  All brands and numbers are fictional sample data ("örnek veri").
+-->
+<html lang="tr" data-resolution="landscape">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<script src="assets/vendor/gsap.min.js"></script>
+<style>
+@font-face{font-family:"Inter";font-weight:500;src:url(assets/fonts/inter-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:500;src:url(assets/fonts/inter-latin-ext-500-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Inter";font-weight:800;src:url(assets/fonts/inter-latin-800-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:800;src:url(assets/fonts/inter-latin-ext-800-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Instrument Serif";font-style:italic;font-weight:400;src:url(assets/fonts/instrument-serif-latin-400-italic.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Instrument Serif";font-style:italic;font-weight:400;src:url(assets/fonts/instrument-serif-latin-ext-400-italic.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"JetBrains Mono";font-weight:500;src:url(assets/fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"JetBrains Mono";font-weight:500;src:url(assets/fonts/jetbrains-mono-latin-ext-500-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+:root{--bg:#07080C;--ink:#F5F3EE;--gold:#E9C46A;--sup:#2B2F3A;--sup2:#9A9EA8;--card:#12141B;
+  --f-d:"Inter",sans-serif;--f-s:"Instrument Serif",serif;--f-m:"JetBrains Mono",monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;background:var(--bg);overflow:hidden}
+#root{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--bg);font-family:var(--f-d);color:var(--ink);font-feature-settings:"tnum" 1,"lnum" 1}
+.wrap,.layer{position:absolute;left:0;top:0;width:1920px;height:1080px}
+.ent{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:960px 540px}
+.ent>*{position:absolute}
+.spot{position:absolute;left:520px;top:130px;width:1200px;height:700px}
+.numsvg{left:0;top:420px}
+.lab{left:112px;top:384px;font:500 18px/1 var(--f-m);letter-spacing:.12em;color:var(--sup2);white-space:nowrap}
+.lab i{display:inline-block;width:34px;height:2px;margin-right:14px;vertical-align:middle;background:currentColor;opacity:.6}
+.nm{left:760px;top:138px;height:106px;overflow:hidden;white-space:nowrap}
+.nm span{display:inline-block;padding-top:14px;font:800 72px/90px var(--f-d);letter-spacing:-.035em}
+.nm i{font:400 86px/90px var(--f-s);font-style:italic;letter-spacing:-.01em;color:var(--sup2);margin-left:.1em}
+.card{position:absolute;left:760px;top:260px;width:720px;height:440px}
+.cbg{position:absolute;inset:0;border-radius:18px;background:var(--card);overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 24px 60px rgba(0,0,0,.45)}
+.rim{position:absolute;left:0;top:0;bottom:0;width:5px}
+.glowl{position:absolute;left:0;top:0;bottom:0;width:360px}
+.card svg{position:absolute;left:0;top:0}
+.floor{left:760px;top:708px;width:720px;height:120px}
+.sg{left:760px;top:716px;width:720px;height:220px}
+.sg>*{position:absolute;left:0;white-space:nowrap}
+.statl{top:0;font:500 18px/1 var(--f-m);letter-spacing:.12em;color:var(--sup2)}
+.stat{top:32px;font:800 96px/110px var(--f-d);letter-spacing:-.03em}
+.stat small{font:500 36px/1 var(--f-d);letter-spacing:0;color:var(--sup2);margin-left:14px}
+.src{top:160px;font:500 15px/1 var(--f-m);letter-spacing:.1em;color:#5D626D}
+.pulse{border:2px solid var(--gold);border-radius:22px}
+#curt,#cl,#cr,#hair{position:absolute;top:0;height:1080px;pointer-events:none}
+#hair{left:959px;width:2px;background:linear-gradient(180deg,transparent,#E9C46A 30%,#E9C46A 70%,transparent);transform-origin:50% 50%}
+#kicker{position:absolute;left:80px;top:62px;font:500 18px/1 var(--f-m);letter-spacing:.12em;color:var(--sup2);white-space:nowrap}
+#kicker i{display:inline-block;width:34px;height:2px;margin-right:16px;vertical-align:middle;background:var(--ink);opacity:.7}
+#tag{position:absolute;right:80px;top:62px;font:500 18px/1 var(--f-m);letter-spacing:.12em;color:#5D626D;white-space:nowrap}
+#railline,#railfill{position:absolute;left:1719px;width:2px}
+.rd{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%}
+.rl{position:absolute;left:1746px;margin-top:-9px;font:500 18px/18px var(--f-m);letter-spacing:.06em}
+#mk{position:absolute;left:1720px;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;box-shadow:0 0 0 6px rgba(255,255,255,.06)}
+#vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(1500px 950px at 50% 48%,transparent 56%,rgba(0,0,0,.6) 100%)}
+#grain{position:absolute;inset:0;pointer-events:none;opacity:.03;mix-blend-mode:overlay}
+#rh{position:absolute;left:120px;top:96px;white-space:nowrap}
+#rh div{overflow:hidden;height:104px}
+#rh span{display:inline-block;padding-top:6px;font:800 84px/96px var(--f-d);letter-spacing:-.035em}
+#rh i{font:400 100px/96px var(--f-s);font-style:italic;color:var(--sup2);margin-left:.12em}
+#rsub{position:absolute;left:122px;top:206px;font:500 18px/1 var(--f-m);letter-spacing:.12em;color:var(--sup2)}
+.tile{position:absolute;width:312px;height:300px;transform-origin:50% 0}
+.tile .cw{position:absolute;left:0;top:0;width:720px;height:440px;transform:scale(.4333);transform-origin:0 0}
+.tile .tr{position:absolute;left:0;top:206px;font:500 14px/1 var(--f-m);letter-spacing:.12em;color:var(--sup2)}
+.tile .tn{position:absolute;left:0;top:226px;font:800 30px/34px var(--f-d);letter-spacing:-.035em;white-space:nowrap}
+.tile .tn i{font:400 36px/34px var(--f-s);font-style:italic;letter-spacing:-.01em;color:var(--sup2);margin-left:.1em}
+.tile .ts{position:absolute;left:0;top:262px;font:800 30px/34px var(--f-d);letter-spacing:-.03em;white-space:nowrap}
+.tile .ts small{font:500 13px/1 var(--f-m);letter-spacing:.1em;color:var(--sup2);margin-left:10px}
+#sheen{position:absolute;top:200px;height:760px;width:640px;background:radial-gradient(ellipse at center,rgba(255,255,255,.06) 0,rgba(255,255,255,0) 68%)}
+#rsrc{position:absolute;left:120px;top:1030px;font:500 15px/1 var(--f-m);letter-spacing:.1em;color:#5D626D}
+</style>
+</head>
+<body>
+<div id="root" class="clip" data-composition-id="main" data-start="0" data-duration="11" data-width="1920" data-height="1080" data-track-index="0">
+  <div id="wraps"></div>
+  <div id="curt"></div><div id="cl"></div><div id="cr"></div><div id="hair"></div>
+  <div class="layer" id="recap">
+    <div id="rh"><div><span>İlk 10 <i>2025</i></span></div></div>
+    <div id="rsub">EN ÇOK SATAN AKILLI SAATLER · MİLYON ADET</div>
+    <div id="tiles"></div>
+    <div id="sheen"></div>
+    <div id="rsrc">KAYNAK: ÖRNEK VERİ, KURGUSAL PERAKENDE PANELİ · 2025</div>
+  </div>
+  <div class="layer" id="rail"><div id="railline"></div><div id="railfill"></div></div>
+  <div id="kicker"><i></i>İLK 10 · 2025'İN EN ÇOK SATAN AKILLI SAATLERİ</div>
+  <div id="tag">ÖRNEK VERİ · KURGUSAL MARKALAR</div>
+  <div id="vignette"></div>
+  <canvas id="grain" width="512" height="512" style="width:1920px;height:1080px"></canvas>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ---------------- constants & helpers ---------------- */
+const DUR=11, GOLD="#E9C46A", SUP="#2B2F3A", SUP2="#9A9EA8", INK="#F5F3EE";
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const seg=(t,a,b)=>clamp((t-a)/(b-a));
+const eo3=x=>1-Math.pow(1-x,3), eo2=x=>1-(1-x)*(1-x);
+const eio=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const back=x=>{const c=1.2;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const rgb=h=>{const n=parseInt(h.slice(1),16);return[n>>16&255,n>>8&255,n&255]};
+const rgba=(h,a)=>{const c=rgb(h);return`rgba(${c[0]},${c[1]},${c[2]},${a})`};
+const shade=(h,k)=>{const c=rgb(h).map(v=>Math.round(v*k));return`rgb(${c[0]},${c[1]},${c[2]})`};
+const mixA=(a,b,k)=>{const p=Array.isArray(a)?a:rgb(a),q=Array.isArray(b)?b:rgb(b);return p.map((v,i)=>v+(q[i]-v)*k)};
+const mix=(a,b,k)=>`rgb(${mixA(a,b,k).map(Math.round).join(",")})`;
+const fmt=v=>v.toFixed(1).replace(".",",");
+function rng(seed){let x=seed>>>0||0x9e3779b9;return()=>{x^=x<<13;x>>>=0;x^=x>>>17;x^=x<<5;x>>>=0;return x/4294967296}}
+const $=s=>document.querySelector(s);
+const NS="http://www.w3.org/2000/svg";
+
+/* ---------------- fictional data: smartwatch sales 2025, million units ---------------- */
+const ENT=[null,
+ {r:1,n:"Gökçe",q:"Pro",  v:41.8,c:GOLD},
+ {r:2,n:"Kestrel",q:"Işık",v:38.2,c:"#4C7DF0"},
+ {r:3,n:"Orbito",q:"Lite", v:34.6,c:"#2FB67C"},
+ {r:4,n:"Zefir",q:"Spor",  v:29.9,c:"#E0745A"},
+ {r:5,n:"Halcyon",q:"Go",  v:27.3,c:"#3BB0C9"},
+ {r:6,n:"Brisa",q:"Mini",  v:24.1,c:"#D9548F"},
+ {r:7,n:"Tavla",q:"Fit",   v:21.7,c:"#E59A2E"},
+ {r:8,n:"Vega",q:"Bir",    v:18.4,c:"#6FA8DC"},
+ {r:9,n:"Çınar",q:"Fit",   v:15.2,c:"#9BBF5A"},
+ {r:10,n:"Şafak",q:"Temel",v:12.8,c:"#A89466"}];
+const MONTHS="OŞMNMHTAEEKA".split("");
+ENT.forEach(e=>{if(!e)return;const R=rng(e.r*977+13);e.m=[];for(let i=0;i<12;i++)e.m.push(.38+.5*Math.pow(i/11,.85)+.12*R());const mx=Math.max(...e.m);e.m=e.m.map(v=>v/mx)});
+
+/* Inter 800 glyph outlines, 520 px, baseline at y=0 (extracted from the Fontsource file) */
+const GLY={
+ "1":{d:"M200.1 -378.3L200.1 0L110.7 0L110.7 -300.4L108.2 -300.4L23.1 -241.7L23.1 -320.4L107.4 -378.3Z",cx:111.6},
+ "2":{d:"M28.2 0L28.2 -64.2L165.8 -185.9Q181.5 -200.1 192.6 -212.1Q203.6 -224.2 209.5 -236.1Q215.3 -248.1 215.3 -262.5Q215.3 -278.3 208.3 -289.6Q201.3 -300.9 189.3 -307Q177.2 -313.1 161.5 -313.1Q145.5 -313.1 133.6 -306.7Q121.6 -300.4 115 -288.2Q108.4 -276 108.4 -258.7L23.1 -258.7Q23.1 -297.1 40.5 -325Q57.9 -352.9 89.1 -368.2Q120.4 -383.4 161.7 -383.4Q204.4 -383.4 236 -369.1Q267.6 -354.7 284.9 -328.9Q302.1 -303.2 302.1 -269.4Q302.1 -247.8 293.6 -226.9Q285.1 -205.9 262.9 -180Q240.7 -154.1 199.6 -118.6L152.6 -74.9L152.6 -72.4L307 -72.4L307 0Z",cx:165},
+ "3":{d:"M169.9 5.1Q127 5.1 93.8 -9.6Q60.7 -24.4 41.6 -50.4Q22.6 -76.4 22.3 -110.4L112.2 -110.4Q112.7 -98 120.4 -88.4Q128 -78.7 141 -73.4Q154.1 -68 170.6 -68Q187.1 -68 199.7 -73.9Q212.3 -79.7 219.4 -90Q226.5 -100.3 226.5 -114Q226.5 -127.7 218.7 -138.1Q211 -148.5 196.7 -154.5Q182.3 -160.5 163 -160.5L126.2 -160.5L126.2 -224.5L163 -224.5Q179.8 -224.5 192.7 -230.3Q205.7 -236.1 212.9 -246.2Q220.1 -256.2 220.1 -269.6Q220.1 -282.6 213.9 -292.4Q207.7 -302.1 196.7 -307.6Q185.6 -313.1 170.9 -313.1Q155.4 -313.1 142.9 -307.6Q130.5 -302.1 123.1 -292.5Q115.8 -282.9 115.8 -269.4L29.7 -269.4Q30 -302.9 48.4 -328.7Q66.8 -354.5 98.6 -368.9Q130.5 -383.4 171.1 -383.4Q211.3 -383.4 242 -369.2Q272.7 -355 289.7 -330.5Q306.7 -306 306.7 -275.2Q306.7 -243.8 286 -222.8Q265.3 -201.9 232.6 -197L232.6 -194.2Q261.5 -190.9 281.1 -179.1Q300.6 -167.3 310.5 -148.9Q320.4 -130.5 320.4 -107.1Q320.4 -74.6 301.3 -49.1Q282.1 -23.6 248.1 -9.3Q214 5.1 169.9 5.1Z",cx:171.4}};
+
+/* ---------------- timeline (seconds) ---------------- */
+const HERO={
+ 3:{in:-3,   dolly:0, dr:[-3,-2.4],  cd:[-2.9,-2.2], nm:[-2.7,-2.2], cn:[-2.5,-1.3], out:.15, outD:.9},
+ 2:{in:.15,  dolly:1, dr:[.35,.95],  cd:[.5,1.2],    nm:[.75,1.2],   cn:[.95,2.15],  out:3.5, outD:.7},
+ 1:{in:5.0,  dolly:0, dr:[5.0,5.65], cd:[5.25,5.95], nm:[5.55,6.0],  cn:[5.7,7.9],   out:8.6, outD:.55}};
+const BLACK0=4.2, CURT0=4.6, CURT1=5.4, IMP=7.9, MORPH0=8.6, MORPH1=9.6;
+const RAILY=r=>Math.round(240+(10-r)*(600/9));
+
+/* ---------------- card artwork (720 x 440) ---------------- */
+function svgEl(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+function buildCard(E){
+  const card=document.createElement("div");card.className="card";
+  card.innerHTML=`<div class="cbg"><div class="glowl" style="background:linear-gradient(90deg,${rgba(E.c,.14)},${rgba(E.c,0)})"></div><div class="rim" style="background:linear-gradient(180deg,${rgba(E.c,.6)},${rgba(E.c,.25)})"></div></div>`;
+  const s=svgEl("svg",{width:720,height:440,viewBox:"0 0 720 440"});card.appendChild(s);
+  const dark=shade(E.c,.38);
+  svgEl("rect",{x:122,y:34,width:96,height:120,rx:18,fill:dark},s);
+  svgEl("rect",{x:122,y:286,width:96,height:130,rx:18,fill:dark},s);
+  [320,344,368].forEach(y=>svgEl("circle",{cx:170,cy:y,r:4.5,fill:"#0A0C10",opacity:.8},s));
+  svgEl("rect",{x:244,y:192,width:9,height:36,rx:3,fill:shade(E.c,.7)},s);
+  svgEl("rect",{x:95,y:132,width:150,height:176,rx:44,fill:"#0A0C10",stroke:shade(E.c,.85),"stroke-width":4},s);
+  svgEl("rect",{x:101,y:138,width:138,height:164,rx:38,fill:"none",stroke:"rgba(255,255,255,.07)","stroke-width":1.5},s);
+  const cx=170,cy=220;
+  svgEl("circle",{cx,cy,r:54,fill:"none",stroke:rgba(E.c,.18),"stroke-width":8},s);
+  svgEl("circle",{cx,cy,r:40,fill:"none",stroke:"rgba(255,255,255,.1)","stroke-width":8},s);
+  const r1=svgEl("circle",{cx,cy,r:54,fill:"none",stroke:E.c,"stroke-width":8,pathLength:1,"stroke-dasharray":"1","stroke-dashoffset":1,transform:`rotate(-90 ${cx} ${cy})`},s);
+  const r2=svgEl("circle",{cx,cy,r:40,fill:"none",stroke:INK,"stroke-opacity":.85,"stroke-width":8,pathLength:1,"stroke-dasharray":"1","stroke-dashoffset":1,transform:`rotate(-90 ${cx} ${cy})`},s);
+  const hand=svgEl("line",{x1:cx,y1:cy,x2:cx,y2:cy-27,stroke:E.c,"stroke-width":3,"stroke-linecap":"round"},s);
+  svgEl("circle",{cx,cy,r:4,fill:INK},s);
+  const lab=svgEl("text",{x:352,y:78,fill:SUP2,"font-family":"JetBrains Mono","font-weight":500,"font-size":15,"letter-spacing":"2.2"},s);lab.textContent="AYLIK SATIŞ · 2025";
+  svgEl("line",{x1:340,y1:362,x2:688,y2:362,stroke:SUP,"stroke-width":2},s);
+  const bars=[];
+  for(let i=0;i<12;i++){
+    const x=348+i*28.5;
+    bars.push(svgEl("rect",{x,y:362,width:21,height:0,rx:4,fill:i===11?INK:E.c,"fill-opacity":i===11?.95:.85},s));
+    const m=svgEl("text",{x:x+10.5,y:392,fill:"#5D626D","font-family":"JetBrains Mono","font-weight":500,"font-size":14,"text-anchor":"middle"},s);m.textContent=MONTHS[i];
+  }
+  return{el:card,bars,r1,r2,hand,E};
+}
+function setCard(C,p,t){
+  const E=C.E;
+  C.bars.forEach((b,i)=>{const g=eo3(seg(p,i*.045,i*.045+.5));const h=206*E.m[i]*g;b.setAttribute("y",(362-h).toFixed(2));b.setAttribute("height",h.toFixed(2))});
+  C.r1.setAttribute("stroke-dashoffset",(1-p*.86).toFixed(4));
+  C.r2.setAttribute("stroke-dashoffset",(1-p*.64).toFixed(4));
+  C.hand.setAttribute("transform",`rotate(${(t*120).toFixed(2)} 170 220)`);
+}
+
+/* ---------------- hero entries ---------------- */
+const heroes={};
+[3,2,1].forEach(r=>{
+  const E=ENT[r],H=HERO[r],g=GLY[r],wrap=document.createElement("div");
+  wrap.className="wrap";
+  const tx=350-g.cx;
+  wrap.innerHTML=`<canvas class="spot" width="600" height="350"></canvas><div class="ent">
+   <svg class="numsvg" width="700" height="440" viewBox="0 420 700 440"><defs><linearGradient id="lg${r}" gradientUnits="userSpaceOnUse" x1="0" y1="8" x2="0" y2="-396"><stop class="g0" offset="0" stop-color="${E.c}"/><stop class="g1" offset="0" stop-color="${E.c}"/><stop class="g2" offset="0" stop-color="${E.c}" stop-opacity="0"/><stop offset="1" stop-color="${E.c}" stop-opacity="0"/></linearGradient></defs>
+     <g transform="translate(${tx.toFixed(1)},820)"><path class="ns" d="${g.d}" fill="none" stroke="${SUP2}" stroke-width="3" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/><path class="nf" d="${g.d}" fill="url(#lg${r})"/></g></svg>
+   <div class="lab"><i></i>SIRA ${String(r).padStart(2,"0")} / 10</div>
+   <div class="nm"><span>${E.n}<i>${E.q}</i></span></div>
+   <div class="floor" style="background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.09) 50%,rgba(255,255,255,0)) top/100% 1px no-repeat,linear-gradient(180deg,${rgba(E.c,.04)},${rgba(E.c,0)})"></div>
+   <div class="sg"><div class="statl">SATIŞ ADEDİ · 2025</div><div class="stat"><span class="v"></span><small>milyon adet</small></div><div class="src">KAYNAK: ÖRNEK VERİ, KURGUSAL PERAKENDE PANELİ</div></div>
+  </div>`;
+  const ent=wrap.querySelector(".ent"),C=buildCard(E);
+  ent.insertBefore(C.el,ent.querySelector(".sg"));
+  let pulse=null;if(r===1){pulse=document.createElement("div");pulse.className="pulse";ent.appendChild(pulse)}
+  { // spotlight: ellipse 1200 x 700, entry colour at 10 %, painted once (a static bitmap composites without gradient dither drift)
+    const sc=wrap.querySelector(".spot").getContext("2d"),gr=sc.createRadialGradient(300,175,0,300,175,297);
+    gr.addColorStop(0,rgba(E.c,.10));gr.addColorStop(1,rgba(E.c,0));
+    sc.setTransform(1,0,0,350/600,0,175-175*350/600);sc.fillStyle=gr;sc.fillRect(0,0,600,600);
+  }
+  $("#wraps").appendChild(wrap);
+  heroes[r]={wrap,ent,C,E,H,pulse,
+    spot:wrap.querySelector(".spot"),svg:ent.querySelector(".numsvg"),ns:ent.querySelector(".ns"),nf:ent.querySelector(".nf"),g1:ent.querySelector(".g1"),g2:ent.querySelector(".g2"),
+    lab:ent.querySelector(".lab"),nm:ent.querySelector(".nm"),nms:ent.querySelector(".nm span"),floor:ent.querySelector(".floor"),sg:ent.querySelector(".sg"),v:ent.querySelector(".v")};
+});
+
+/* ---------------- recap wall ---------------- */
+const TILEX=r=>120+((r-1)%5)*342, TILEY=r=>250+Math.floor((r-1)/5)*330;
+const tiles={};
+for(let r=1;r<=10;r++){
+  const E=ENT[r],t=document.createElement("div");t.className="tile";t.style.left=TILEX(r)+"px";t.style.top=TILEY(r)+"px";
+  t.innerHTML=`<div class="tr"${r===1?` style="color:${GOLD}"`:""}>SIRA ${String(r).padStart(2,"0")}</div><div class="tn">${E.n}<i>${E.q}</i></div><div class="ts">${fmt(E.v)}<small>MİLYON ADET</small></div>`;
+  let C=null;
+  if(r!==1){const w=document.createElement("div");w.className="cw";C=buildCard(E);w.appendChild(C.el);t.insertBefore(w,t.firstChild);C.el.style.left="0px";C.el.style.top="0px"}
+  $("#tiles").appendChild(t);tiles[r]={el:t,C,E};
+}
+
+/* ---------------- rail ---------------- */
+const rail=$("#rail"),railDots=[],railLabs=[];
+for(let r=10;r>=1;r--){
+  const d=document.createElement("div");d.className="rd";d.style.left="1720px";d.style.top=RAILY(r)+"px";rail.appendChild(d);railDots.push([r,d]);
+  const l=document.createElement("div");l.className="rl";l.style.top=RAILY(r)+"px";l.textContent=String(r).padStart(2,"0");rail.appendChild(l);railLabs.push([r,l]);
+}
+const mk=document.createElement("div");mk.id="mk";rail.appendChild(mk);
+$("#railline").style.cssText=`top:${RAILY(10)}px;height:${RAILY(1)-RAILY(10)}px;background:${SUP}`;
+$("#railfill").style.cssText=`top:${RAILY(10)}px;height:0px;background:${rgba(INK,.5)}`;
+
+/* static grain, seeded */
+{const c=$("#grain"),g=c.getContext("2d"),im=g.createImageData(512,512),R=rng(7);for(let i=0;i<im.data.length;i+=4){const v=R()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}g.putImageData(im,0,0)}
+
+/* curtain glow gradients (static) */
+$("#curt").style.background=`linear-gradient(90deg,${rgba(GOLD,.55)},${rgba(GOLD,.3)} 14%,${rgba(GOLD,.3)} 86%,${rgba(GOLD,.55)})`;
+$("#cl").style.cssText+=`;width:150px;background:linear-gradient(90deg,${rgba(GOLD,0)},${rgba(GOLD,.5)} 88%,${GOLD} 98%,#fff6d8 100%)`;
+$("#cr").style.cssText+=`;width:150px;background:linear-gradient(270deg,${rgba(GOLD,0)},${rgba(GOLD,.5)} 88%,${GOLD} 98%,#fff6d8 100%)`;
+
+/* ---------------- draw(t): every visible property is a function of t ---------------- */
+function drawHero(r,t){
+  const h=heroes[r],H=h.H,E=h.E;
+  const isOne=r===1;
+  const vis=isOne?(t>=CURT0):(r===3?t<H.out+H.outD+.05:(t<BLACK0+.02));
+  h.wrap.style.visibility=vis?"visible":"hidden";
+  if(!vis)return;
+  const din=H.dolly?eio(seg(t,H.in,H.in+.9)):1;
+  const xo=eio(seg(t,H.out,H.out+H.outD));
+  const ao=isOne?1-eo3(seg(t,H.out,H.out+H.outD)):1-eo3(seg(t,H.out+H.outD*.35,H.out+H.outD));
+  const off=f=>((1-din)*320-xo*320)*f;
+  const cp=eo2(seg(t,H.cn[0],H.cn[1]));
+  // push (2% over the hold) and the impact punch on number one
+  let push=1+.02*seg(t,H.cd[1]-.2,H.out+H.outD);
+  if(isOne){const m=eio(seg(t,MORPH0,MORPH1));const pn=.03*seg(t,IMP-.06,IMP)*(1-eo3(seg(t,IMP,IMP+.55)));push=(push+pn)*(1-m)+m}
+  // camera push via zoom, not transform: Chrome re-lays out and re-rasters at the exact size every frame (no cached raster scale, so seeks stay pure)
+  const pz=+push.toFixed(5);h.ent.style.zoom=pz;h.ent.style.left=(960*(1-pz)/pz).toFixed(3)+"px";h.ent.style.top=(540*(1-pz)/pz).toFixed(3)+"px";
+  // spotlight
+  h.spot.style.opacity=(eo3(seg(t,H.dr[0]-.3,H.dr[0]+.5))*ao).toFixed(3);
+  h.spot.style.left=(520+Math.round(off(.35)+Math.sin(t*.8+r)*34))+"px";h.spot.style.top=(130+Math.round(Math.cos(t*.6+r)*12))+"px";
+  // numeral: outline draws, then the fill rises with the count
+  const sd=eio(seg(t,H.dr[0],H.dr[1]));
+  h.ns.setAttribute("stroke-dashoffset",(1-sd).toFixed(4));
+  h.ns.setAttribute("stroke",mix(SUP2,SUP,eo3(seg(t,H.dr[1],H.dr[1]+.5))));
+  const go=(cp*404/404).toFixed(4);h.g1.setAttribute("offset",go);h.g2.setAttribute("offset",go);
+  h.nf.setAttribute("fill-opacity",(cp>0?1-eo3(seg(t,H.out,H.out+.4)):0).toFixed(3));
+  const drift=-60*eo3(seg(t,H.out,H.out+.6));
+  h.svg.style.transform=`translateX(${(off(.75)+drift).toFixed(2)}px)`;
+  h.svg.style.opacity=ao.toFixed(3);
+  // label
+  const la=eo3(seg(t,H.dr[0],H.dr[0]+.4))*ao;
+  h.lab.style.opacity=la.toFixed(3);h.lab.style.transform=`translateX(${off(.9).toFixed(2)}px)`;
+  h.lab.style.color=isOne?GOLD:SUP2;
+  // name rising out of a mask
+  const np=eo3(seg(t,H.nm[0],H.nm[1]));
+  h.nms.style.transform=`translateY(${((1-np)*110).toFixed(2)}%)`;
+  h.nm.style.transform=`translateX(${off(1.1).toFixed(2)}px)`;h.nm.style.opacity=ao.toFixed(3);
+  // card: rises 40 px and tilts 8 -> 0, back.out(1.2)
+  const cs=seg(t,H.cd[0],H.cd[1]),b=back(cs),ca=eo3(seg(t,H.cd[0],H.cd[0]+.35));
+  const bob=Math.sin(t*1.7+r*2)*3*cs;
+  if(isOne&&t>=MORPH0){
+    const m=eio(seg(t,MORPH0,MORPH1)),s=1+(.4333-1)*m;
+    const dx=(TILEX(1)-760)*m,dy=(TILEY(1)-260)*m;
+    h.C.el.style.transformOrigin="0 0";
+    h.C.el.style.transform=`translate(${dx.toFixed(2)}px,${dy.toFixed(2)}px) scale(${s.toFixed(5)})`;
+    h.C.el.style.opacity=1;
+  }else{
+    h.C.el.style.transformOrigin="0 100%";
+    h.C.el.style.transform=`translate(${Math.round(off(1))}px,${Math.round((1-b)*40+bob)}px) rotate(${((1-b)*8).toFixed(3)}deg)`;
+    h.C.el.style.opacity=(ca*ao).toFixed(3);
+  }
+  setCard(h.C,cp,t);
+  // floor reflection tint
+  const fa=ca*ao*(isOne?1-eo3(seg(t,MORPH0,MORPH0+.4)):1);
+  h.floor.style.opacity=fa.toFixed(3);h.floor.style.transform=`translateX(${off(1).toFixed(2)}px)`;
+  // stat block
+  const sa=eo3(seg(t,H.cn[0]-.25,H.cn[0]+.2))*ao;
+  h.sg.style.opacity=sa.toFixed(3);h.sg.style.transform=`translateX(${off(1.15).toFixed(2)}px)`;
+  h.v.textContent=fmt(E.v*cp);
+  // impact ring on number one
+  if(h.pulse){
+    const pp=eo3(seg(t,IMP,IMP+.7)),g=pp*46;
+    h.pulse.style.left=(760-g)+"px";h.pulse.style.top=(260-g)+"px";h.pulse.style.width=(720+2*g)+"px";h.pulse.style.height=(440+2*g)+"px";
+    h.pulse.style.opacity=(t>=IMP&&t<IMP+.7?(1-pp)*.8:0).toFixed(3);
+  }
+}
+
+function draw(t){
+  [3,2,1].forEach(r=>drawHero(r,t));
+
+  // curtain: black beat, hairline riser, centre-out light curtain
+  const p=eio(seg(t,CURT0,CURT1)),half=960*p;
+  const w1=heroes[1].wrap;
+  w1.style.clipPath=p>=1?"none":`inset(0px ${(960-half).toFixed(2)}px)`;
+  const hair=$("#hair");
+  const hs=eo3(seg(t,4.25,CURT0));
+  hair.style.transform=`scaleY(${hs.toFixed(4)})`;hair.style.opacity=(t<CURT0?hs:0).toFixed(3);
+  const curt=$("#curt");
+  curt.style.left=(960-half)+"px";curt.style.width=(2*half)+"px";
+  curt.style.opacity=(t>=CURT0&&t<CURT1+.02?1-seg(p,.25,1):0).toFixed(3);
+  const ea=(t>=CURT0&&t<CURT1+.02?seg(t,CURT0,CURT0+.06)*(1-seg(p,.88,1)):0).toFixed(3);
+  $("#cl").style.left=(960-half-146)+"px";$("#cl").style.opacity=ea;
+  $("#cr").style.left=(960+half-4)+"px";$("#cr").style.opacity=ea;
+
+  // rail marker: 3 -> 2 with the dolly, 2 -> 1 during the black beat
+  const rk=3-eio(seg(t,.15,1.05))-eio(seg(t,BLACK0,5.0));
+  const my=Math.round(240+(10-rk)*(600/9));
+  const mcol=mix(mixA(ENT[3].c,ENT[2].c,eio(seg(t,.15,1.05))),GOLD,eio(seg(t,BLACK0,5.0)));
+  const mkEl=$("#mk");mkEl.style.top=my+"px";mkEl.style.background=mcol;
+  $("#railfill").style.height=Math.max(0,my-RAILY(10))+"px";
+  railDots.forEach(([r,d])=>{const k=clamp((my-RAILY(r))/14+.5);d.style.background=mix(SUP,"#B9B7B1",k)});
+  railLabs.forEach(([r,l])=>{const k=clamp((my-RAILY(r))/14+.5);l.style.color=mix("#4B505B",r===Math.round(rk)?INK:SUP2,k*.9+.1*(r===Math.round(rk)?1:0))});
+  const ra=1-eo3(seg(t,8.4,8.9));
+  rail.style.opacity=ra.toFixed(3);
+  const ka=1-eo3(seg(t,8.5,8.9));
+  $("#kicker").style.opacity=ka.toFixed(3);$("#tag").style.opacity=ka.toFixed(3);
+
+  // recap wall
+  const rc=$("#recap");
+  rc.style.visibility=t>=MORPH0+.2?"visible":"hidden";
+  const hp=eo3(seg(t,8.9,9.5));
+  $("#rh span").style.transform=`translateY(${((1-hp)*110).toFixed(2)}%)`;
+  $("#rsub").style.opacity=eo3(seg(t,9.1,9.6)).toFixed(3);
+  $("#rsrc").style.opacity=eo3(seg(t,9.4,9.9)).toFixed(3);
+  for(let r=1;r<=10;r++){
+    const T=tiles[r],s0=r===1?9.3:9.3+(r-2)*.06;
+    const b=back(seg(t,s0,s0+.5)),a=eo3(seg(t,s0,s0+.35));
+    if(r===1){
+      T.el.style.opacity=a.toFixed(3);T.el.style.transform=`translateY(${((1-b)*16).toFixed(2)}px)`;
+      // card of tile 1 is the morphed hero card; hide this tile's own card slot
+    }else{
+      T.el.style.opacity=a.toFixed(3);
+      T.el.style.transform=`translateY(${((1-b)*44).toFixed(2)}px) scale(${(.9+.1*b).toFixed(4)})`;
+      setCard(T.C,1,t);
+    }
+  }
+  // soft sheen pass over the wall, then it keeps the final frame alive
+  const sh=eio(seg(t,10.0,10.98));
+  $("#sheen").style.left=Math.round(-640+sh*2640)+"px";
+  $("#sheen").style.opacity=(t>=10.0&&t<10.99?1:0);
+}
+
+/* ---------------- HyperFrames contract: one paused timeline ---------------- */
+const proxy={t:0};
+const tl=gsap.timeline({paused:true});
+tl.to(proxy,{t:DUR,duration:DUR,ease:"none",onUpdate:()=>draw(proxy.t)},0);
+window.__timelines=window.__timelines||{};window.__timelines.main=tl;
+window.DUR=DUR;
+window.__seek=t=>{tl.seek(t,false);proxy.t=t;draw(t)};
+document.fonts.ready.then(()=>{draw(0);window.READY=true});
+})();
+</script>
+</body>
+</html>

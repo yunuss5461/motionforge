@@ -1,0 +1,396 @@
+<!doctype html>
+<!--
+  motionforge style preview: brand-saga (16:9, 12 s, 30 fps)
+  © 2026 motionforge contributors, MIT
+
+  One brand's whole life on a long gallery wall. This 12 s excerpt is a single-chapter cut-down:
+  chapter I is already on screen, the camera dollies to chapter II (1978), the chapter arrives
+  (numeral, masked title, framed items settle, curve dot pops), the old product slides aside while
+  the new one rises on the same plinth, the defining moment pushes in 3 % while the sales curve
+  segment for that year thickens to 4 px for 2 s, and the closing walk pulls back to show the whole
+  wall and the complete curve.
+
+  Signature move: the floor curve. It lives in a fixed band at the bottom of the frame and draws
+  itself to the camera position (the future stays dashed at 30 %), so every chapter sits on top
+  of the data it explains.
+
+  How it stays seek-pure: camera position, zoom, parallax factors, curve reveal, dot pops, counters,
+  typing and spinning wheels are all pure functions of t inside draw(t). Nothing reads the previous
+  frame, no wall clock, no Math.random (the paper grain is drawn once from a seeded generator).
+  The camera uses CSS zoom on three parallax layers (wall 1.0x, frames 1.15x, plinths 1.3x) and
+  pixel-rounded layer positions; no transform scale on the moving content, no will-change.
+
+  Excerpt note: STYLE.md asks for 15 to 45 s per chapter and several chapters; this preview holds
+  chapter II for about 6 s and shows I and III only as context and in the closing walk.
+
+  Fonts: only the three bundled families. Stand-ins for the STYLE.md faces: Fraunces -> Instrument
+  Serif (chapter titles, numerals, stat), IBM Plex Mono -> JetBrains Mono (dates, labels), Inter for
+  captions. Copy is Turkish on purpose (ç ğ ı İ ö ş ü); both latin and latin-ext faces are declared.
+  The brand (Çınar Bisiklet), its dates, products and every figure are fictional sample data
+  (örnek veri). All art is drawn in SVG/CSS; there are no photos or external images.
+-->
+<html lang="tr" data-resolution="landscape">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<script src="assets/vendor/gsap.min.js"></script>
+<style>
+@font-face{font-family:"Inter";font-weight:500;src:url(assets/fonts/inter-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:500;src:url(assets/fonts/inter-latin-ext-500-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Inter";font-weight:700;src:url(assets/fonts/inter-latin-700-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:700;src:url(assets/fonts/inter-latin-ext-700-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Inter";font-weight:800;src:url(assets/fonts/inter-latin-800-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:800;src:url(assets/fonts/inter-latin-ext-800-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Instrument Serif";font-weight:400;src:url(assets/fonts/instrument-serif-latin-400-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Instrument Serif";font-weight:400;src:url(assets/fonts/instrument-serif-latin-ext-400-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Instrument Serif";font-style:italic;font-weight:400;src:url(assets/fonts/instrument-serif-latin-400-italic.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Instrument Serif";font-style:italic;font-weight:400;src:url(assets/fonts/instrument-serif-latin-ext-400-italic.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"JetBrains Mono";font-weight:500;src:url(assets/fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"JetBrains Mono";font-weight:500;src:url(assets/fonts/jetbrains-mono-latin-ext-500-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"JetBrains Mono";font-weight:700;src:url(assets/fonts/jetbrains-mono-latin-700-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"JetBrains Mono";font-weight:700;src:url(assets/fonts/jetbrains-mono-latin-ext-700-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+:root{--bg:#F1ECE3;--ink:#1D1B18;--accent:#B8432F;--sup:#8A8378;--sup2:#DDD5C8;
+  --f-disp:"Instrument Serif",serif;--f-body:"Inter",sans-serif;--f-mono:"JetBrains Mono",monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;background:var(--bg);overflow:hidden}
+#root{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-feature-settings:"lnum" 1,"tnum" 1}
+.lay{position:absolute;left:0;top:0;width:0;height:0}
+.zm{position:absolute;left:0;top:0;width:0;height:0}
+.room{position:absolute;top:120px;width:1600px;height:0}
+.abs{position:absolute}
+/* wall */
+.panel{position:absolute;left:0;top:-1320px;width:1600px;height:2060px;border-left:2px solid var(--sup2)}
+.base{position:absolute;left:0;top:700px;width:1600px;height:40px;background:#E5DDCE;border-top:2px solid #EDE6D9}
+.floor{position:absolute;left:0;top:740px;width:1600px;height:1900px;background:linear-gradient(180deg,#E7DFD0,#DCD3C2 40%,#D5CBB9)}
+.ttl{position:absolute;left:60px;top:0;height:112px;overflow:hidden;font:400 88px/104px var(--f-disp);letter-spacing:-.02em;white-space:nowrap}
+.ttl span{display:inline-block}
+.num{position:absolute;right:60px;top:-30px;font:400 220px/1 var(--f-disp);color:var(--sup);letter-spacing:-.02em;white-space:nowrap}
+.lbl{position:absolute;left:62px;top:122px;font:500 16px/1 var(--f-mono);letter-spacing:.12em;color:var(--sup);white-space:nowrap}
+/* frames */
+.fr{position:absolute;border:2px solid var(--ink);background:#FBF8F2;padding:18px}
+.fr .art{width:100%;height:100%;position:relative;overflow:hidden}
+.fr .art svg{position:absolute;left:0;top:0}
+.tx{position:absolute;white-space:nowrap}
+.cr{position:absolute;font:500 13px/1 var(--f-mono);letter-spacing:.12em;color:var(--sup);white-space:nowrap}
+.cap{position:absolute;left:430px;top:628px;width:620px;font:500 26px/1.4 var(--f-body);color:var(--ink)}
+.cap .gh{color:transparent}
+.stat{position:absolute;left:430px;width:740px;top:190px;height:128px;overflow:hidden;text-align:center}
+.stat .sn{display:block;font:400 118px/128px var(--f-disp);letter-spacing:-.02em;white-space:nowrap}
+.sl{position:absolute;left:430px;width:740px;top:322px;text-align:center;font:500 14px/1 var(--f-mono);letter-spacing:.12em;color:var(--sup);white-space:nowrap}
+.tag{position:absolute;left:430px;width:740px;top:236px;text-align:center;font:500 18px/1 var(--f-mono);letter-spacing:.12em;color:var(--sup);white-space:nowrap}
+.glow{position:absolute;left:430px;top:300px;width:740px;height:340px;background:radial-gradient(ellipse at 50% 62%,rgba(255,248,226,.95),rgba(255,248,226,0) 68%);opacity:0}
+.row{position:absolute;left:0;width:100%;height:46px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #E6DFD0}
+.row:last-child{border-bottom:0}
+.row b{font:500 13px/1 var(--f-mono);letter-spacing:.12em;color:var(--sup);font-weight:500}
+.row i{font:700 30px/1 var(--f-body);font-style:normal;letter-spacing:-.02em}
+/* plinths */
+.pl{position:absolute;left:430px;top:560px;width:740px;height:40px;background:linear-gradient(180deg,#E6DFD1,#D4CBBA);border-top:2px solid #F8F3E9;box-shadow:0 16px 24px -10px rgba(29,27,24,.30)}
+.pt{position:absolute;top:574px;width:340px;text-align:center;font:500 13px/1 var(--f-mono);letter-spacing:.12em;color:#6F685D;white-space:nowrap}
+.bk{position:absolute;top:345px;width:340px;height:215px}
+.bk svg{position:absolute;left:0;top:0}
+.bsh{position:absolute;left:30px;bottom:-5px;width:280px;height:18px;background:radial-gradient(ellipse at 50% 50%,rgba(29,27,24,.40),rgba(29,27,24,0) 70%)}
+.clipbox{position:absolute;left:810px;top:325px;width:340px;height:235px;overflow:hidden}
+/* screen layer */
+#light{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(255,252,244,.55) 0,rgba(255,252,244,.0) 520px),radial-gradient(1500px 900px at 50% 40%,rgba(0,0,0,0) 60%,rgba(60,48,30,.10) 100%)}
+#floorsvg{position:absolute;left:0;top:0}
+.m{font:500 14px "JetBrains Mono",monospace;letter-spacing:.12em}
+.m16{font:500 16px "JetBrains Mono",monospace;letter-spacing:.12em}
+#hdr{position:absolute;left:120px;top:50px;font:500 16px/1 var(--f-mono);letter-spacing:.12em;color:var(--sup);white-space:nowrap}
+#hdr2{position:absolute;right:120px;top:50px;font:500 16px/1 var(--f-mono);letter-spacing:.12em;color:var(--sup);white-space:nowrap}
+#src{position:absolute;left:120px;top:1054px;font:500 13px/1 var(--f-mono);letter-spacing:.12em;color:var(--sup);white-space:nowrap}
+#closing{position:absolute;left:120px;top:90px;width:1500px}
+#closing .c1{height:100px;overflow:hidden;font:400 80px/96px var(--f-disp);letter-spacing:-.02em;white-space:nowrap}
+#closing .c1 span{display:inline-block}
+#closing .c2{margin-top:10px;font:500 16px/1 var(--f-mono);letter-spacing:.12em;color:var(--sup);white-space:nowrap}
+#grain{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;opacity:.22}
+</style>
+</head>
+<body>
+<div id="root" class="clip" data-composition-id="main" data-start="0" data-duration="12" data-width="1920" data-height="1080" data-track-index="0">
+  <div id="wallL" class="lay"><div id="wallZ" class="zm"></div></div>
+  <div id="frameL" class="lay"><div id="frameZ" class="zm"></div></div>
+  <div id="plinthL" class="lay"><div id="plinthZ" class="zm"></div></div>
+  <div id="light"></div>
+  <svg id="floorsvg" width="1920" height="1080" viewBox="0 0 1920 1080"></svg>
+  <div id="hdr">ÇINAR BİSİKLET · 1952 – 2024</div>
+  <div id="hdr2">KURGUSAL MARKA · ÖRNEK VERİ</div>
+  <div id="src">KAYNAK: KURGUSAL ÖRNEK VERİ · TAHMİNİ DEĞERLER · motionforge stil önizlemesi</div>
+  <div id="closing"><div class="c1"><span>72 yıl, üç bölüm, tek duvar.</span></div><div class="c2">SATIŞLAR · BİN ADET / YIL · ÖRNEK VERİ</div></div>
+  <canvas id="grain" width="960" height="540"></canvas>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ---------------- helpers ---------------- */
+const DUR=12;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const seg=(t,a,b)=>clamp((t-a)/(b-a));
+const lerp=(a,b,u)=>a+(b-a)*u;
+const eo3=x=>1-Math.pow(1-x,3);
+const eio2=x=>x<.5?2*x*x:1-2*(1-x)*(1-x);                 // gsap power2.inOut
+const back=x=>{const c=1.70158;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)}; // back.out
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const fmtN=n=>String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,".");
+function rng(seed){let x=seed>>>0||0x9e3779b9;return()=>{x^=x<<13;x>>>=0;x^=x>>>17;x^=x<<5;x>>>=0;return x/4294967296}}
+const $=s=>document.querySelector(s);
+const mk=(cls,html,style)=>{const d=document.createElement("div");if(cls)d.className=cls;if(html!=null)d.innerHTML=html;if(style)d.style.cssText=style;return d};
+const AC="#B8432F";
+
+/* ---------------- fictional sales curve (thousand units / year), monotone cubic ---------------- */
+const KP=[[1952,3],[1956,6],[1960,10],[1962,14],[1966,24],[1970,40],[1973,58],[1975,88],[1977,112],[1978,118],[1979,108],[1980,92],[1983,78],[1986,66],[1989,62],[1992,72],[1994,95],[1996,128],[1998,152],[2001,138],[2004,132],[2008,160],[2012,182],[2016,214],[2020,238],[2024,262]];
+const KX=KP.map(p=>p[0]),KY=KP.map(p=>p[1]),NK=KP.length,KH=[],KD=[],KM=new Array(NK);
+for(let i=0;i<NK-1;i++){KH.push(KX[i+1]-KX[i]);KD.push((KY[i+1]-KY[i])/KH[i])}
+KM[0]=KD[0];KM[NK-1]=KD[NK-2];
+for(let i=1;i<NK-1;i++)KM[i]=KD[i-1]*KD[i]<=0?0:(KD[i-1]+KD[i])/2;
+for(let i=0;i<NK-1;i++){const a=KM[i]/KD[i],b=KM[i+1]/KD[i],s=a*a+b*b;if(s>9){const k=3/Math.sqrt(s);KM[i]=k*a*KD[i];KM[i+1]=k*b*KD[i]}}
+function curve(yr){if(yr<=KX[0])return KY[0];if(yr>=KX[NK-1])return KY[NK-1];let i=0;while(KX[i+1]<yr)i++;
+  const s=(yr-KX[i])/KH[i],s2=s*s,s3=s2*s;
+  return (2*s3-3*s2+1)*KY[i]+(s3-2*s2+s)*KH[i]*KM[i]+(-2*s3+3*s2)*KY[i+1]+(s3-s2)*KH[i]*KM[i+1]}
+/* floor band geometry (screen px) */
+const Y0=1952,Y1=2024,PX0=170,PX1=1800,BASE=972,VSC=100/280;
+const X=y=>PX0+(y-Y0)/(Y1-Y0)*(PX1-PX0), Yv=v=>BASE-v*VSC;
+const STEP=0.1,NS=Math.round((Y1-Y0)/STEP);
+const SP=[];for(let i=0;i<=NS;i++){const y=Y0+i*STEP;SP.push(X(y).toFixed(1)+" "+Yv(curve(y)).toFixed(1))}
+function pathRange(a,b){ // years a..b along the curve
+  a=Math.max(a,Y0);b=Math.min(b,Y1);if(b<=a)return "M0 0";
+  const i0=Math.ceil((a-Y0)/STEP-1e-9),i1=Math.floor((b-Y0)/STEP+1e-9);
+  let d="M"+X(a).toFixed(1)+" "+Yv(curve(a)).toFixed(1);
+  for(let i=i0;i<=i1;i++)d+="L"+SP[i];
+  if(b>Y0+i1*STEP+1e-6)d+="L"+X(b).toFixed(1)+" "+Yv(curve(b)).toFixed(1);
+  return d}
+
+/* ---------------- camera (pure functions of t) ---------------- */
+const DOLLY0=1.4,DOLLY1=3.0,PUSH0=6.5,PUSH1=7.7,PB0=9.2,PB1=10.9;
+const camBase=t=>1600*eio2(seg(t,DOLLY0,DOLLY1))+12*t;      // slow constant drift keeps the curve drawing
+const pbU=t=>eio2(seg(t,PB0,PB1));
+function camState(t){
+  const u=pbU(t),cb=camBase(t),cx=lerp(cb,1600,u);
+  const z0=(1+.01*clamp(t/6.5))*(1+.03*eio2(seg(t,PUSH0,PUSH1)));
+  const ZE=.385+.012*seg(t,PB1,DUR),z=z0*Math.pow(ZE/z0,u);
+  const cy=lerp(540,470+30/ZE,u);
+  return{u,cx,cy,z}}
+const camYear=t=>1962+camBase(t)/100;
+const drawnYear=t=>lerp(Y0+(camYear(t)-Y0)*eo3(seg(t,0,1.0)),Y1,pbU(t));
+const KEYS=[1962,1978,1994];
+const POP=KEYS.map(k=>{for(let i=0;i<=DUR*240;i++){const t=i/240;if(drawnYear(t)>=k-1e-6)return t}return 99});
+
+/* ---------------- art ---------------- */
+function bike(kind,col,spin,basket){
+  const R=56,CY=128,RX=60,FX=240,BB="132,128",S="112,64",H="207,70";
+  const tire=kind==="mtb"?9:5.5,rim="#8A8378";
+  const wheel=cx=>{let sp="";for(let i=0;i<10;i++){const a=i*Math.PI/5;sp+=`<line x1="${cx}" y1="${CY}" x2="${(cx+Math.cos(a)*(R-6)).toFixed(1)}" y2="${(CY+Math.sin(a)*(R-6)).toFixed(1)}"/>`}
+    return `<circle cx="${cx}" cy="${CY}" r="${R}" fill="none" stroke="#26231F" stroke-width="${tire}"/><circle cx="${cx}" cy="${CY}" r="${R-tire/2-1.5}" fill="none" stroke="${rim}" stroke-width="1.6"/><g ${spin?'class="spk"':""} data-c="${cx}" stroke="${rim}" stroke-width="1.1">${sp}<circle cx="${cx+R-11}" cy="${CY}" r="3" fill="#F4EEDF" stroke="none"/></g><circle cx="${cx}" cy="${CY}" r="5" fill="#26231F"/>`};
+  const T=`fill="none" stroke="${col}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"`;
+  const D=`fill="none" stroke="#26231F" stroke-linecap="round" stroke-linejoin="round"`;
+  let tubes=`<path ${T} d="M${S} L${BB} M${S} L${RX},${CY} M${BB} L${RX},${CY} M${H} L${BB}`;
+  if(kind==="diamond")tubes+=` M${S} L${H}`;
+  if(kind==="mtb")tubes+=` M114,62 L205,74`;
+  tubes+=`"/>`;
+  let fork=`<path ${T} d="M${H} L${FX},${CY}"/>`;
+  if(kind==="mtb")fork+=`<path fill="none" stroke="#26231F" stroke-width="2.4" stroke-linecap="round" d="M${H} L${FX-2},${CY-14} M205,74 L${FX-6},${CY-18}"/>`;
+  const bar=kind==="step"?"M199,44 Q226,30 237,50":kind==="diamond"?"M199,44 H224 Q239,44 237,62":"M195,44 H233";
+  const fend=kind==="step"?`<path ${D.replace('#26231F',col)} stroke-width="3.5" d="M${RX-R-5},${CY} A${R+5},${R+5} 0 0 1 ${RX+R+5},${CY} M${FX-R-5},${CY} A${R+5},${R+5} 0 0 1 ${FX+R+5},${CY}"/>`:"";
+  const bsk=basket?`<g ${D} stroke-width="2.4"><rect x="214" y="22" width="34" height="22" rx="3" fill="#E9DFC9"/><path d="M222,22 V44 M231,22 V44 M240,22 V44"/></g>`:"";
+  const crank=`<g class="crk" data-c="132"><circle cx="132" cy="128" r="12" fill="none" stroke="#26231F" stroke-width="2"/><path d="M132,128 L149,128" ${D} stroke-width="3.2"/><rect x="146" y="124" width="11" height="5" rx="1.5" fill="#26231F"/></g>`;
+  return `<svg width="340" height="215" viewBox="0 0 300 190">${fend}${wheel(RX)}${wheel(FX)}${tubes}${fork}<path ${D} stroke-width="4" d="M206,66 L201,44"/><path ${D} stroke-width="3.6" d="${bar}"/>${bsk}<path ${D} stroke-width="7" d="M96,60 H126"/><path ${D} stroke-width="4" d="M112,64 L112,59"/>${crank}</svg>`}
+
+const TX=(l,top,font,col,txt,extra)=>`<div class="tx" style="left:${l}px;top:${top}px;font:${font};color:${col};${extra||""}">${txt}</div>`;
+function posterSVG(c){
+  return `<svg width="290" height="360" viewBox="0 0 290 360"><rect width="290" height="360" fill="${c.bg}"/><circle cx="210" cy="212" r="66" fill="${c.sun}" opacity=".92"/><rect y="318" width="290" height="42" fill="rgba(0,0,0,.18)"/>
+  <g transform="translate(-4 150) scale(.99)">${bike(c.kind,c.bike,false,c.basket).replace(/<svg[^>]*>/,"<g>").replace("</svg>","</g>")}</g></svg>`
+  +TX(18,19,"500 11px/14px 'JetBrains Mono',monospace",c.fg,c.sub,"letter-spacing:.12em;opacity:.8")
+  +TX(18,44,"800 30px/36px 'Inter',sans-serif",c.fg,c.l1,"letter-spacing:-.01em")
+  +TX(18,80,"800 30px/36px 'Inter',sans-serif",c.fg,c.l2,"letter-spacing:-.01em")}
+
+const LEAF=`<polygon points="0,-28 7,-11 25,-15 14,0 23,17 6,11 0,28 -6,11 -23,17 -14,0 -25,-15 -7,-11"/>`;
+function logoSVG(k){
+  const MONO="500 12px/14px 'JetBrains Mono',monospace";
+  if(k===0)return `<svg width="290" height="180" viewBox="0 0 290 180"><rect width="290" height="180" fill="#F3EBDA"/><g transform="translate(58 82)" fill="#3E6B57">${LEAF}</g></svg>`
+    +TX(102,28,"italic 400 76px/84px 'Instrument Serif',serif","#1D1B18","Çınar","letter-spacing:-.01em")+TX(104,128,MONO,"#6F685D","BİSİKLET · 1962","letter-spacing:.14em");
+  if(k===1)return `<svg width="290" height="180" viewBox="0 0 290 180"><rect width="290" height="180" fill="#2B4C73"/><g transform="translate(58 82)"><circle r="40" fill="none" stroke="#F3EBDA" stroke-width="4"/><circle r="30" fill="none" stroke="#F3EBDA" stroke-width="1.5"/><g fill="#F3EBDA" transform="scale(.7)">${LEAF}</g></g></svg>`
+    +TX(112,68,"800 40px/48px 'Inter',sans-serif","#F3EBDA","ÇINAR","letter-spacing:.02em")+TX(114,124,MONO,"#B9C6D6","BİSİKLET · 1978","letter-spacing:.14em");
+  return `<svg width="290" height="180" viewBox="0 0 290 180"><rect width="290" height="180" fill="#1F3B3F"/><g transform="translate(56 82)" fill="none" stroke="#E7D9B4" stroke-width="4"><circle r="36"/><path d="M-36,0 H36 M0,-36 V36 M-25,-25 L25,25 M25,-25 L-25,25" stroke-width="2"/></g></svg>`
+    +TX(108,64,"700 44px/52px 'JetBrains Mono',monospace","#E7D9B4","çınar","letter-spacing:-.04em")+TX(110,124,MONO,"#8FB0AE","DAĞ SERİSİ · 1994","letter-spacing:.14em")}
+
+/* ---------------- room configs ---------------- */
+const ROOMS=[
+ {k:0,yr:1962,roman:"I",title:"Atölyeden Fabrikaya",S:.15,tint:"#EEE8DD",
+  poster:{kind:"step",bike:"#E9D9A8",bg:"#3E6B57",sun:"#C98F4A",fg:"#F3EBDA",l1:"ÇARŞIYA",l2:"ÇINAR İLE",sub:"ÇINAR BİSİKLET · 1962",basket:true},
+  info:[["BAYİ SAYISI",26],["ÇALIŞAN SAYISI",140]],stat:[14000,"ADET · 1962 SATIŞI"],
+  bikes:[{kind:"step",col:"#3E6B57",basket:true,lab:"1962 · ÇARŞI",sp:150}],
+  caps:[["1962: Çarşı modeliyle atölyeden ilk fabrika hattına geçtik.",.6,1.8]],
+  credits:["AFİŞ · 1962 · ÖRNEK","LOGO, 1962","BAYİ KAYITLARI · ÖRNEK VERİ"]},
+ {k:1,yr:1978,roman:"II",title:"Şehrin Bisikleti",S:2.9,tint:"#F1ECE3",
+  poster:{kind:"diamond",bike:"#F3EBDA",bg:"#2B4C73",sun:"#D9A441",fg:"#F3EBDA",l1:"HER SOKAĞA",l2:"BİR GEZGİN",sub:"ÇINAR BİSİKLET · 1978"},
+  info:[["BAYİ SAYISI",212],["ÇALIŞAN SAYISI",1850]],stat:[118000,"ADET · 1978 SATIŞI"],
+  bikes:[{kind:"step",col:"#8A8F5A",lab:"1971 · GEZGİN 1",sp:130},{kind:"diamond",col:"#2B4C73",lab:"1978 · GEZGİN 3",sp:210}],
+  caps:[["Yedi yıl önce atölyede doğan Gezgin 1, üç vitesli yeni halefine yer açıyor.",4.2,5.6],["1978: Gezgin 3 tek yılda 118 bin adet sattı; Çınar ülkenin en çok satan markası oldu.",6.9,8.5]],
+  credits:["AFİŞ · 1978 · ÖRNEK","LOGO, 1978","BAYİ KAYITLARI · ÖRNEK VERİ"]},
+ {k:2,yr:1994,roman:"III",title:"Dağlara Doğru",S:10.0,tint:"#F4EFE8",
+  poster:{kind:"mtb",bike:"#E7D9B4",bg:"#1F3B3F",sun:"#C9744A",fg:"#F3EBDA",l1:"DAĞ SENİN,",l2:"YOL SENİN",sub:"ÇINAR BİSİKLET · 1994"},
+  info:[["BAYİ SAYISI",430],["ÇALIŞAN SAYISI",3200]],stat:[95000,"ADET · 1994 SATIŞI"],
+  bikes:[{kind:"mtb",col:"#2F6B6F",lab:"1994 · DAĞ-94",sp:220}],
+  caps:[["1994: Dağ bisikleti dalgasıyla satışlar yeniden yükseldi.",10.2,10.9]],
+  credits:["AFİŞ · 1994 · ÖRNEK","LOGO, 1994","BAYİ KAYITLARI · ÖRNEK VERİ"]}];
+
+/* ---------------- build the wall ---------------- */
+const wallZ=$("#wallZ"),frameZ=$("#frameZ"),plinthZ=$("#plinthZ");
+const OUTER=[{k:-1,tint:"#EFE9DE"},{k:3,tint:"#F1ECE3"}];
+const wallRoom={}, frameRoom={}, plinthRoom={}, R=[];
+function roomGroup(parent,k){const g=mk("room");g.style.left=(1600*k-800)+"px";parent.appendChild(g);return g}
+function panelFor(g,tint){const p=mk("panel",null,"background:"+tint);g.appendChild(p);g.appendChild(mk("base"));g.appendChild(mk("floor"))}
+OUTER.forEach(o=>{const g=roomGroup(wallZ,o.k);panelFor(g,o.tint)});
+ROOMS.forEach(c=>{
+  const r={c};
+  // wall layer
+  const gw=roomGroup(wallZ,c.k);panelFor(gw,c.tint);
+  r.gw=gw;r.wc=mk("abs");r.wc.style.cssText="left:0;top:0;width:1600px;height:0";gw.appendChild(r.wc);
+  r.ttl=mk("ttl",`<span>${esc(c.title)}</span>`);r.ttlI=r.ttl.firstChild;r.wc.appendChild(r.ttl);
+  r.num=mk("num",String(c.yr));r.wc.appendChild(r.num);
+  r.lbl=mk("lbl",`BÖLÜM ${c.roman} · ${c.yr}`);r.wc.appendChild(r.lbl);
+  // frame layer
+  const gf=roomGroup(frameZ,c.k);r.gf=gf;
+  r.poster=mk("fr",null,"left:60px;top:190px;width:330px;height:400px");r.poster.innerHTML=`<div class="art">${posterSVG(c.poster)}</div>`;
+  r.logo=mk("fr",null,"left:1210px;top:190px;width:330px;height:220px");r.logo.innerHTML=`<div class="art">${logoSVG(c.k)}</div>`;
+  r.info=mk("fr",null,"left:1210px;top:450px;width:330px;height:140px");
+  r.info.innerHTML=`<div class="art">${c.info.map((x,i)=>`<div class="row" style="top:${i*46}px"><b>${x[0]}</b><i></i></div>`).join("")}</div>`;
+  r.infoV=[...r.info.querySelectorAll("i")];
+  r.cr=[mk("cr",c.credits[0],"left:62px;top:600px"),mk("cr",c.credits[1],"left:1212px;top:418px"),mk("cr",c.credits[2],"left:1212px;top:600px")];
+  [r.poster,r.logo,r.info,...r.cr].forEach(e=>gf.appendChild(e));
+  r.caps=c.caps.map(x=>{const e=mk("cap");gf.appendChild(e);return e});
+  r.stat=mk("stat",`<span class="sn"></span>`);r.statN=r.stat.firstChild;gf.appendChild(r.stat);
+  r.statL=mk("sl",c.stat[1]+" · ÖRNEK VERİ");gf.appendChild(r.statL);
+  if(c.k===1){r.tag=mk("tag","1971 → 1978 · YEDİ YIL, İKİ MODEL");gf.appendChild(r.tag);r.glow=mk("glow");gf.insertBefore(r.glow,gf.firstChild)}
+  // plinth layer
+  const gp=roomGroup(plinthZ,c.k);r.gp=gp;gp.appendChild(mk("pl"));
+  r.bikes=c.bikes.map((b,i)=>{
+    const holder=mk("bk",`<div class="bsh"></div>`+bike(b.kind,b.col,true,b.basket));
+    let host=holder;
+    if(c.k===1&&i===1){const cb=mk("clipbox");holder.style.left="0px";holder.style.top="20px";cb.appendChild(holder);gp.appendChild(cb);host=cb}
+    else gp.appendChild(holder);
+    const lab=mk("pt",b.lab);gp.appendChild(lab);
+    return{b,holder,host,lab,sh:holder.querySelector(".bsh"),spk:[...holder.querySelectorAll(".spk")],crk:holder.querySelector(".crk")}});
+  R.push(r)});
+const GL=[{L:$("#wallL"),Z:wallZ,p:1},{L:$("#frameL"),Z:frameZ,p:1.15},{L:$("#plinthL"),Z:plinthZ,p:1.3}];
+
+/* ---------------- floor band (screen space) ---------------- */
+const svg=$("#floorsvg");
+(function(){
+  let s=`<defs><linearGradient id="afill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${AC}" stop-opacity=".18"/><stop offset="1" stop-color="${AC}" stop-opacity="0"/></linearGradient></defs>`;
+  [0,100,200].forEach(v=>{s+=`<line x1="${PX0}" x2="${PX1}" y1="${Yv(v).toFixed(1)}" y2="${Yv(v).toFixed(1)}" stroke="#8A8378" stroke-opacity="${v?0.22:0.4}" stroke-width="1"/><text class="m" x="${PX0-12}" y="${(Yv(v)+5).toFixed(1)}" text-anchor="end" fill="#8A8378" font-size="13">${v}</text>`});
+  s+=`<text class="m" x="${PX0}" y="866" fill="#8A8378" font-size="13">BİN ADET / YIL</text>`;
+  s+=`<path d="${pathRange(Y0,Y1).replace(/L/g,"L")}" fill="none" stroke="${AC}" stroke-opacity=".3" stroke-width="2.5" stroke-dasharray="3 7" stroke-linecap="round"/>`;
+  s+=`<path id="cfill" fill="url(#afill)"/><path id="cglow" fill="none" stroke="${AC}" stroke-opacity=".16" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path id="cline" fill="none" stroke="${AC}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path id="cthick" fill="none" stroke="${AC}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0"/>`;
+  // rail
+  s+=`<line x1="${X(Y0)}" x2="${X(Y1)}" y1="1004" y2="1004" stroke="#DDD5C8" stroke-width="2"/><line id="rfill" x1="${X(Y0)}" y1="1004" y2="1004" stroke="#1D1B18" stroke-width="2"/>`;
+  [1952,1960,1970,1980,1990,2000,2010,2024].forEach(y=>{s+=`<line x1="${X(y).toFixed(1)}" x2="${X(y).toFixed(1)}" y1="998" y2="1010" stroke="#8A8378" stroke-width="1"/><text class="m16" x="${X(y).toFixed(1)}" y="1034" text-anchor="middle" fill="#8A8378">${y}</text>`});
+  s+=`<polygon id="rmark" fill="${AC}" points="-7,984 7,984 0,998"/>`;
+  // chapter dots, rules, key dates
+  const KL=["1962 · 14 BİN","1978 · 118 BİN","1994 · 95 BİN"];
+  KEYS.forEach((k,i)=>{s+=`<line id="rule${i}" x1="${X(k).toFixed(1)}" x2="${X(k).toFixed(1)}" stroke="#1D1B18" stroke-opacity=".5" stroke-width="1" opacity="0"/><text id="kd${i}" class="m16" x="${X(k).toFixed(1)}" y="846" text-anchor="middle" fill="${AC}" opacity="0">${KL[i]}</text><circle id="dot${i}" r="5" fill="${AC}" stroke="#F1ECE3" stroke-width="2" transform="translate(0 0) scale(0)"/>`});
+  s+=`<circle id="tipring" r="10" fill="none" stroke="${AC}" stroke-width="1.5" opacity="0"/><circle id="tip" r="5.5" fill="${AC}" stroke="#F1ECE3" stroke-width="2"/>`;
+  svg.innerHTML=s})();
+const E={cline:$("#cline"),cglow:$("#cglow"),cfill:$("#cfill"),cthick:$("#cthick"),rfill:$("#rfill"),rmark:$("#rmark"),tip:$("#tip"),tipring:$("#tipring"),
+  rule:KEYS.map((k,i)=>$("#rule"+i)),kd:KEYS.map((k,i)=>$("#kd"+i)),dot:KEYS.map((k,i)=>$("#dot"+i))};
+
+/* paper grain: drawn once from a seeded generator */
+(function(){const c=$("#grain"),g=c.getContext("2d"),r=rng(20261107),im=g.createImageData(960,540),d=im.data;
+  for(let i=0;i<d.length;i+=4){const v=r()<.5?0:255;d[i]=d[i+1]=d[i+2]=v;d[i+3]=Math.floor(r()*70)}g.putImageData(im,0,0)})();
+
+/* ---------------- draw(t) ---------------- */
+function typed(el,text,t,a,b,op){
+  const n=Math.floor(text.length*seg(t,a,b)+1e-6);
+  el.innerHTML=esc(text.slice(0,n))+`<span class="gh">${esc(text.slice(n))}</span>`;
+  el.style.opacity=op}
+function settleOf(t,s0){const e=eo3(seg(t,s0,s0+.5)),u=eo3(seg(t,s0+.2,s0+.5));
+  return{dy:Math.round(-6*(1-e)),sh:`0 ${lerp(16,4,u).toFixed(1)}px ${lerp(30,8,u).toFixed(1)}px rgba(29,27,24,${lerp(.14,.26,u).toFixed(3)})`,u}}
+function spinBike(b,t){const a=t*b.b.sp;
+  b.spk.forEach(g=>g.setAttribute("transform",`rotate(${a.toFixed(2)} ${g.getAttribute("data-c")} 128)`));
+  if(b.crk)b.crk.setAttribute("transform",`rotate(${(a*.5).toFixed(2)} 132 128)`)}
+
+function draw(t){
+  const cs=camState(t),zs=cs.z.toFixed(5);
+  // layers: wrapper positions are integer screen pixels, zoom lives on the inner element
+  GL.forEach((g,i)=>{const p=1+(g.p-1)*(1-cs.u);
+    g.L.style.left=Math.round(960-cs.cx*p*cs.z)+"px";g.L.style.top=Math.round(540-cs.cy*cs.z)+"px";g.Z.style.zoom=zs;
+    if(i>0)R.forEach(r=>{const grp=i===1?r.gf:r.gp;grp.style.left=Math.round(1600*r.c.k*p-800)+"px"})});
+  R.forEach(r=>{const c=r.c,k=c.k,S=c.S;
+    const prox=clamp(1-Math.abs(cs.cx-1600*k)/1600),op=lerp(.5,1,clamp(prox+cs.u)).toFixed(3);
+    r.wc.style.opacity=op;r.gf.style.opacity=op;r.gp.style.opacity=op;
+    // wall: numeral fades up, title rises out of a mask
+    const en=eo3(seg(t,S-.15,S+.45)),et=eo3(seg(t,S-.05,S+.45));
+    r.num.style.opacity=(.42*en).toFixed(3);r.num.style.transform=`translateY(${Math.round((1-en)*24)}px)`;
+    r.ttlI.style.transform=`translateY(${((1-et)*112).toFixed(1)}px)`;
+    // frames settle with a 6 px drop and a tightening shadow
+    [[r.poster,190],[r.logo,190],[r.info,450]].forEach(([f,y0],i)=>{const s=settleOf(t,S+i*.1);f.style.top=(y0+s.dy)+"px";f.style.boxShadow=s.sh});
+    r.cr.forEach((e,i)=>e.style.opacity=eo3(seg(t,S+.3+i*.1,S+.6+i*.1)).toFixed(3));
+    // counters in the info card
+    const ce=eo3(seg(t,S+.2,S+1.4));c.info.forEach((x,i)=>r.infoV[i].textContent=fmtN(x[1]*ce));
+    // captions
+    c.caps.forEach((cp,i)=>{let o=1;if(k===1&&i===0)o=1-eo3(seg(t,6.3,6.6));typed(r.caps[i],cp[0],t,cp[1],cp[2],o)});
+    // big statistic
+    let se,sc;
+    if(k===1){se=eo3(seg(t,6.6,7.1));sc=eo3(seg(t,6.8,8.3))}
+    else if(k===0){se=eo3(seg(t,.4,.9));sc=eo3(seg(t,.5,1.5))}
+    else{se=eo3(seg(t,S+.1,S+.6));sc=eo3(seg(t,S+.2,S+1.2))}
+    r.statN.style.transform=`translateY(${((1-se)*128).toFixed(1)}px)`;r.statN.textContent=fmtN(c.stat[0]*sc);
+    r.statL.style.opacity=eo3(seg(t,k===1?7.0:S+.4,k===1?7.4:S+.8)).toFixed(3);
+    if(k===1){
+      r.tag.style.opacity=(eo3(seg(t,3.3,3.9))*(1-eo3(seg(t,6.3,6.7)))).toFixed(3);
+      r.tag.style.transform=`translateY(${Math.round((1-eo3(seg(t,3.3,3.9)))*10)}px)`;
+      r.glow.style.opacity=(.6*eo3(seg(t,6.5,7.5))*(1-eo3(seg(t,8.6,9.4)))).toFixed(3)}
+    // plinth: bikes settle, then-and-now, labels
+    r.bikes.forEach((b,i)=>{
+      const s=settleOf(t,S);let x=630,rise=0,lo=0,sho=s.u;
+      if(k===1){
+        if(i===0){x=lerp(630,450,eio2(seg(t,4.3,5.4)));lo=eo3(seg(t,5.0,5.4))}
+        else{rise=1-eo3(seg(t,4.6,5.7));x=810;lo=eo3(seg(t,5.6,5.9));sho=eo3(seg(t,5.3,5.7))}
+      }else lo=eo3(seg(t,S+.4,S+.7));
+      if(k===1&&i===1){b.holder.style.left="0px";b.holder.style.top=(20+Math.round(rise*215))+"px"}
+      else{b.holder.style.left=Math.round(x)+"px";b.holder.style.top=(345+s.dy)+"px"}
+      b.sh.style.opacity=(.4+.6*sho).toFixed(3);
+      b.lab.style.left=(k===1?(i===0?450:810):630)+"px";b.lab.style.opacity=lo.toFixed(3);
+      spinBike(b,t)})});
+
+  // floor band: curve drawn to the camera position, future dashed
+  const dy=drawnYear(t),tipY=Yv(curve(dy));
+  const line=pathRange(Y0,dy);
+  E.cline.setAttribute("d",line);E.cglow.setAttribute("d",line);
+  E.cfill.setAttribute("d",line+`L${X(dy).toFixed(1)} ${BASE}L${X(Y0)} ${BASE}Z`);
+  // defining moment: the 1978 segment thickens to 4 px for 2 s
+  const th=eo3(seg(t,6.9,7.15))*(1-eo3(seg(t,8.9,9.15)));
+  const te=Math.min(dy,1978.8);
+  if(th>0&&te>1976.8){E.cthick.setAttribute("d",pathRange(1976.8,te));E.cthick.setAttribute("opacity",th.toFixed(3))}else E.cthick.setAttribute("opacity","0");
+  E.tip.setAttribute("transform",`translate(${X(dy).toFixed(1)} ${tipY.toFixed(1)})`);
+  const ph=.5+.5*Math.sin(t*5);
+  E.tipring.setAttribute("transform",`translate(${X(dy).toFixed(1)} ${tipY.toFixed(1)}) scale(${(.8+.5*ph).toFixed(3)})`);E.tipring.setAttribute("opacity",(.45*(1-ph)).toFixed(3));
+  E.rfill.setAttribute("x2",X(dy).toFixed(1));
+  E.rmark.setAttribute("transform",`translate(${X(dy).toFixed(1)} 0)`);
+  KEYS.forEach((k,i)=>{const pt=POP[i],sc=pt>50?0:(t<pt?0:back(seg(t,pt,pt+.35))),dotY=Yv(curve(k));
+    E.dot[i].setAttribute("transform",`translate(${X(k).toFixed(1)} ${dotY.toFixed(1)}) scale(${(sc*1.0).toFixed(3)})`);
+    const ru=eo3(seg(t,pt+.15,pt+.65));
+    E.rule[i].setAttribute("y1",(dotY-8).toFixed(1));E.rule[i].setAttribute("y2",lerp(dotY-8,856,ru).toFixed(1));E.rule[i].setAttribute("opacity",(t<pt?0:ru).toFixed(3));
+    E.kd[i].setAttribute("opacity",(t<pt?0:eo3(seg(t,pt+.5,pt+.85))).toFixed(3))});
+
+  // rebuild the zoomed layers and the floor band from scratch every frame so no cached paint from an earlier zoom survives a seek
+  const RB=GL.map(g=>g.Z).concat([svg]);RB.forEach(e=>{e.style.display="none"});void wallZ.offsetWidth;RB.forEach(e=>{e.style.display=""});
+
+  // closing line
+  const ce2=eo3(seg(t,10.5,11.1));$("#closing .c1 span").style.transform=`translateY(${((1-ce2)*100).toFixed(1)}px)`;
+  $("#closing .c2").style.opacity=eo3(seg(t,10.9,11.4)).toFixed(3);
+}
+
+/* ---------------- HyperFrames contract: one paused timeline ---------------- */
+const proxy={t:0};
+const tl=gsap.timeline({paused:true});
+tl.to(proxy,{t:DUR,duration:DUR,ease:"none",onUpdate:()=>draw(proxy.t)},0);
+window.__timelines=window.__timelines||{};window.__timelines.main=tl;
+window.DUR=DUR;
+window.__seek=t=>{tl.seek(t,false);proxy.t=t;draw(t)};
+document.fonts.ready.then(()=>{draw(0);window.READY=true});
+draw(0);
+})();
+</script>
+</body>
+</html>

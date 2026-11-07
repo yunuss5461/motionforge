@@ -1,0 +1,358 @@
+<!doctype html>
+<!--
+  motionforge style preview: scale-ladder (16:9, 13 s, 30 fps)
+  © 2026 motionforge contributors, MIT
+
+  Big numbers made physical. Every square's AREA is one company's yearly revenue, so its side grows
+  with the square root of the value: a 10x longer side is a 100x bigger value. Three rungs, two
+  decade pull-backs. This excerpt of the 5 to 9 rung ladder in STYLE.md shows:
+    Mirabel Kahve     $42 million   (rung 1, 10 x 10 blocks of one branch = $420 thousand)
+    Nordvik Market    $4.2 billion  (rung 2 = 100 Mirabels, the previous square is its corner block)
+    Zenit Teknoloji   $420 billion  (rung 3 = 100 Nordviks), then a dashed square for a fictional
+                                    country budget ($120 billion) that it dwarfs 3.5 to 1.
+  Signature move: the decade pull-back. The camera zooms about the shared bottom-left anchor (log-linear,
+  power2.inOut, 1.4 s), the previous square shrinks into the corner of the next, the "x 10" chip
+  odometer-ticks at the midpoint, the bottom ruler relabels, and an area-multiplier readout counts
+  1 -> 100 -> 10,000 on the zoom curve (it settles 0.2 s early and holds its final value ~0.6 s). The finale
+  (leader to rung 1's last speck + "ZENIT = 10.000 x BU NOKTA" count, 10.0 to 10.9 s) now lands right after
+  rung 3 settles and holds the final value to the end of the clip.
+
+  How it stays seek-pure: every visible value is computed from t in draw(t). No transform:scale and no
+  CSS animation anywhere: the squares are SVG rects with pixel-rounded integer geometry (crispEdges), the
+  grid, block fills, camera creep, counters, chip and ruler are all closed-form functions of t. Block
+  fill order uses a seeded generator (mulberry32) evaluated once at load; there is no Math.random, no
+  wall clock and no previous-frame state. No will-change. The pulse ring and leader line sit on their
+  own SVG layer above the world.
+
+  Fonts: only bundled families. Stand-in for the STYLE.md display face: Space Grotesk 700 -> Inter 700/800
+  (tabular figures); labels JetBrains Mono. Copy is Turkish on purpose (latin and latin-ext declared).
+  All companies, the country and the numbers are fictional sample data (ornek veri), nominal USD, 2025.
+-->
+<html lang="tr" data-resolution="landscape">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<script src="assets/vendor/gsap.min.js"></script>
+<style>
+@font-face{font-family:"Inter";font-weight:500;src:url(assets/fonts/inter-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:500;src:url(assets/fonts/inter-latin-ext-500-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Inter";font-weight:700;src:url(assets/fonts/inter-latin-700-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:700;src:url(assets/fonts/inter-latin-ext-700-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Inter";font-weight:800;src:url(assets/fonts/inter-latin-800-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:800;src:url(assets/fonts/inter-latin-ext-800-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"JetBrains Mono";font-weight:500;src:url(assets/fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"JetBrains Mono";font-weight:500;src:url(assets/fonts/jetbrains-mono-latin-ext-500-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+:root{--bg:#F4F2EC;--ink:#15161A;--acc:#2F5BEA;--sup:#C9C4B8;--sup2:#6F6C66;
+  --f-d:"Inter",sans-serif;--f-m:"JetBrains Mono",monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;background:var(--bg);overflow:hidden}
+#root{position:relative;width:1920px;height:1080px;overflow:hidden;color:var(--ink);font-family:var(--f-d);font-feature-settings:"tnum" 1,"lnum" 1;
+  background:radial-gradient(900px 760px at 960px 540px,rgba(255,255,255,.55),rgba(255,255,255,0) 70%),var(--bg)}
+svg{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;overflow:visible}
+
+#chip{position:absolute;left:120px;top:72px;width:150px;height:56px;border:2px solid var(--ink);border-radius:10px;overflow:hidden;background:var(--bg)}
+#chipin{position:absolute;left:0;top:0;width:100%}
+#chipin div{height:52px;font:500 30px/52px var(--f-m);text-align:center;white-space:nowrap}
+#chipsub{position:absolute;left:290px;top:90px;width:300px;height:20px;overflow:hidden}
+#chipsubin{position:absolute;left:0;top:0;width:100%}
+#chipsubin div{height:20px;font:500 16px/20px var(--f-m);letter-spacing:.06em;color:var(--sup2);white-space:nowrap}
+#intro{position:absolute;left:120px;top:158px;font:500 26px/36px var(--f-d);color:var(--sup2);white-space:nowrap}
+#intro b{color:var(--ink);font-weight:700}
+#topr{position:absolute;right:100px;top:92px;font:500 16px/1 var(--f-m);letter-spacing:.08em;color:var(--sup2);text-align:right;white-space:nowrap}
+
+#lg{position:absolute;left:120px;top:0;width:440px;height:1080px}
+#rail{position:absolute;left:5px;top:313px;width:2px;height:0;background:rgba(21,22,26,.28)}
+.lr{position:absolute;left:0;width:440px;height:80px;opacity:0}
+.lr .dot{position:absolute;left:0;top:7px;width:12px;height:12px;border-radius:2px;border:1px solid var(--ink)}
+.lr b{position:absolute;left:38px;top:0;font:700 28px/32px var(--f-d);letter-spacing:-.01em;white-space:nowrap}
+.lr em{position:absolute;left:38px;top:38px;font:500 22px/26px var(--f-d);font-style:normal;color:var(--sup2);white-space:nowrap;opacity:0}
+
+.blk{position:absolute;left:1340px;top:0;width:480px;height:1080px;opacity:0}
+.blk>div{opacity:0}
+.tag{position:absolute;left:0;top:246px;font:500 16px/1 var(--f-m);letter-spacing:.08em;color:var(--acc);white-space:nowrap}
+.nm{position:absolute;left:0;top:282px;font:700 64px/66px var(--f-d);letter-spacing:-.02em;white-space:nowrap}
+.vv{position:absolute;left:0;top:436px;font:800 110px/110px var(--f-d);letter-spacing:-.035em;white-space:nowrap}
+.vv .un{font:700 34px/1 var(--f-d);letter-spacing:0;color:var(--sup2);margin-left:12px}
+.dg{position:absolute;left:2px;top:560px;font:500 28px/1 var(--f-d);color:var(--sup2);white-space:nowrap}
+.bk{position:absolute;left:0;top:632px;width:480px}
+.bk .l1{font:500 16px/1 var(--f-m);letter-spacing:.06em;white-space:nowrap}
+.bk .l2{margin-top:8px;font:500 14px/1 var(--f-m);color:var(--sup2);letter-spacing:.04em;white-space:nowrap}
+.bk .bar{margin-top:12px;width:480px;height:6px;background:rgba(21,22,26,.12)}
+.bk .bar i{display:block;width:0;height:6px;background:var(--ink)}
+
+#rd{position:absolute;left:1340px;top:0;width:480px;height:1080px;opacity:0}
+#rd .rl{position:absolute;left:0;top:402px;font:500 16px/1 var(--f-m);letter-spacing:.08em;color:var(--sup2);white-space:nowrap}
+#rd .rn{position:absolute;left:0;top:436px;font:800 96px/110px var(--f-d);letter-spacing:-.035em;white-space:nowrap}
+#rd .rs{position:absolute;left:2px;top:560px;font:500 22px/1.3 var(--f-d);color:var(--sup2);white-space:nowrap}
+
+#co{position:absolute;left:1340px;top:726px;width:480px;height:130px;opacity:0}
+#co .cb{position:absolute;left:0;top:0;width:4px;height:130px;background:var(--acc)}
+#co .cn{position:absolute;left:24px;top:-2px;font:800 76px/80px var(--f-d);letter-spacing:-.03em;color:var(--acc);white-space:nowrap}
+#co .ct{position:absolute;left:24px;top:84px;width:440px;font:500 22px/30px var(--f-d);color:var(--ink)}
+
+#bchip{position:absolute;opacity:0;padding:8px 10px;background:var(--ink);color:#fff;font:500 14px/18px var(--f-m);letter-spacing:.05em;text-align:right;white-space:nowrap}
+#bchip b{font-weight:500;color:#C9D6FF}
+
+#rl{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none}
+.tk{position:absolute;top:964px;width:1px;height:10px;background:var(--ink);opacity:.55}
+.tl{position:absolute;top:980px;width:40px;margin-left:-20px;text-align:center;font:500 14px/1 var(--f-m);color:var(--sup2)}
+#rcap{position:absolute;left:120px;top:954px;width:440px;height:20px;overflow:hidden}
+#rcapin{position:absolute;left:0;top:0;width:100%}
+#rcapin div{height:20px;font:500 16px/20px var(--f-m);letter-spacing:.06em;white-space:nowrap}
+#rsweep{position:absolute;top:963px;height:4px;width:140px;background:var(--acc);opacity:0}
+#rline{position:absolute;top:964px;height:2px;background:var(--ink);opacity:.5}
+
+#pl1,#pl2{position:absolute;left:130px;font:500 15px/18px var(--f-m);letter-spacing:.05em;white-space:nowrap;opacity:0}
+#pl1{top:874px}#pl2{top:908px}
+#source{position:absolute;left:120px;top:1034px;font:500 15px/1 var(--f-d);color:var(--sup2);white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="root" class="clip" data-composition-id="main" data-start="0" data-duration="13" data-width="1920" data-height="1080" data-track-index="0">
+  <svg id="world" viewBox="0 0 1920 1080" shape-rendering="crispEdges">
+    <path id="g0" fill="none" stroke="#15161A" stroke-width="1"/>
+    <path id="g1" fill="none" stroke="#15161A" stroke-width="1"/>
+    <path id="g2" fill="none" stroke="#15161A" stroke-width="1"/>
+    <path id="g3" fill="none" stroke="#15161A" stroke-width="1"/>
+    <g id="items"></g>
+    <rect id="budget" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="12 8" visibility="hidden"/>
+  </svg>
+
+  <div id="chip"><div id="chipin"><div>× 1</div><div>× 10</div><div>× 100</div></div></div>
+  <div id="chipsub"><div id="chipsubin"><div>KENAR × 1 · ALAN × 1</div><div>KENAR × 10 · ALAN × 100</div><div>KENAR × 100 · ALAN × 10.000</div></div></div>
+  <div id="intro"><b>Alan</b> = yıllık gelir.<br><b>Kenar</b> = gelirin karekökü.</div>
+  <div id="topr">ÖRNEK VERİ · NOMİNAL USD · 2025</div>
+
+  <div id="lg"><div id="rail"></div>
+    <div class="lr" id="lr0" style="top:300px"><i class="dot"></i><b>Mirabel Kahve</b><em>$42 milyon</em></div>
+    <div class="lr" id="lr1" style="top:396px"><i class="dot"></i><b>Nordvik Market</b><em>$4,2 milyar</em></div>
+    <div class="lr" id="lr2" style="top:492px"><i class="dot"></i><b>Zenit Teknoloji</b><em>$420 milyar</em></div>
+  </div>
+
+  <div class="blk" id="b0"><div class="tag">KADEME 01 / 03 · YILLIK GELİR</div><div class="nm">Mirabel<br>Kahve</div>
+    <div class="vv"><span class="num">0</span><span class="un">milyon $</span></div><div class="dg">$0</div>
+    <div class="bk"><div class="l1">BLOK 0 / 100</div><div class="l2">1 BLOK = TEK ŞUBE · $420 BİN</div><div class="bar"><i></i></div></div></div>
+  <div class="blk" id="b1"><div class="tag">KADEME 02 / 03 · YILLIK GELİR</div><div class="nm">Nordvik<br>Market</div>
+    <div class="vv"><span class="num">0</span><span class="un">milyar $</span></div><div class="dg">$0</div>
+    <div class="bk"><div class="l1">BLOK 0 / 100</div><div class="l2">1 BLOK = MİRABEL KAHVE · $42 MİLYON</div><div class="bar"><i></i></div></div></div>
+  <div class="blk" id="b2"><div class="tag">KADEME 03 / 03 · YILLIK GELİR</div><div class="nm">Zenit<br>Teknoloji</div>
+    <div class="vv"><span class="num">0</span><span class="un">milyar $</span></div><div class="dg">$0</div>
+    <div class="bk"><div class="l1">BLOK 0 / 100</div><div class="l2">1 BLOK = NORDVİK MARKET · $4,2 MİLYAR</div><div class="bar"><i></i></div></div></div>
+
+  <div id="rd"><div class="rl">ALAN ÇARPANI</div><div class="rn">× 1</div><div class="rs">ilk kareye göre, alan olarak</div></div>
+  <div id="co"><div class="cb"></div><div class="cn">1,0×</div><div class="ct">Zenit’in geliri, Valoria devlet bütçesinin 3,5 katı.</div></div>
+  <div id="bchip">VALORİA DEVLET BÜTÇESİ<br><b>$120 MİLYAR · ÖRNEK</b></div>
+
+  <div id="rl"><div id="rline"></div><div id="rsweep"></div><div id="rcap"><div id="rcapin"><div>1 HÜCRE = $420 BİN</div><div>1 HÜCRE = $42 MİLYON</div><div>1 HÜCRE = $4,2 MİLYAR</div></div></div><div id="ticks"></div></div>
+
+  <svg id="fx" viewBox="0 0 1920 1080">
+    <path id="leader" fill="none" stroke="#15161A" stroke-width="2" stroke-dasharray="560 560" stroke-dashoffset="560" opacity="0"/>
+    <circle id="ring" cx="0" cy="0" r="10" fill="none" stroke="#2F5BEA" stroke-width="2" opacity="0"/>
+    <circle id="mark" cx="0" cy="0" r="4" fill="#2F5BEA" opacity="0"/>
+  </svg>
+  <div id="pl1">BU NOKTA = MİRABEL KAHVE · $42 MİLYON</div><div id="pl2">ZENİT = 1 × BU NOKTA (ALAN)</div>
+  <div id="source">Kaynak: örnek veri, kurgusal şirketler ve ülke · yıllık gelir, nominal USD, 2025 · karelerin alanı değerle orantılıdır</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ---------------- constants ---------------- */
+const W=1920,H=1080,DUR=13;
+const AX=610,AY=870;            // shared bottom-left anchor (the camera zooms about this point)
+const BASE=648;                 // rung 1 side in px at zoom 1 (60 % of frame height)
+const CREEP=0.03;               // slow push-in during each hold, in decades (about 7 %)
+const BG="#F4F2EC",INK="#15161A",ACC="#2F5BEA",SUP="#C9C4B8";
+const NS="http://www.w3.org/2000/svg";
+const PB=[[3.3,4.7],[7.3,8.7]]; // the two decade pull-backs (1.4 s, log-linear, power2.inOut)
+
+/* ---------------- helpers ---------------- */
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const seg=(t,a,b)=>clamp((t-a)/(b-a));
+const eo2=x=>1-(1-x)*(1-x), eo3=x=>1-Math.pow(1-x,3);
+const eio=x=>x<.5?2*x*x:1-Math.pow(2-2*x,2)/2;          // power2.inOut
+const smooth=x=>x*x*(3-2*x);
+const lerp=(a,b,x)=>a+(b-a)*x;
+const hex=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+const mixc=(c1,c2,x)=>{const a=hex(c1),b=hex(c2);return "#"+a.map((v,i)=>("0"+Math.round(lerp(v,b[i],x)).toString(16)).slice(-2)).join("")};
+const f3=v=>(Math.round(v*1000)/1000).toString();
+const fmtI=n=>String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,".");
+const fmtD=(v,d)=>(d?v.toFixed(d):String(Math.round(v))).replace(".",",");
+const $=s=>document.querySelector(s);
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+/* ---------------- fictional ladder (areas = yearly revenue, nominal USD 2025) ---------------- */
+const ITEMS=[
+ {V:42e6, big:42, dec:0, g:[.25,1.25], nm:[.7,1.1], cf:[1.0,2.2], vc:[1.25,2.45], out:3.3, rowIn:.9, seed:11},
+ {V:4.2e9,big:4.2,dec:1, g:[4.4,5.4], nm:[5.0,5.4], cf:[5.2,6.4], vc:[5.5,6.6], out:7.3, rowIn:4.95,seed:23},
+ {V:420e9,big:420,dec:0, g:[8.4,9.4], nm:[9.0,9.4], cf:[9.2,10.4],vc:[9.5,10.6],out:null,rowIn:8.95,seed:37}];
+const BUDGET=120e9;             // fictional country budget ($120 B), drawn at sqrt(120/420) of rung 3's side
+
+/* seeded row-by-row block order: rows climb bottom-up, order inside a row is shuffled */
+function ranks(seed){const r=mulberry32(seed),a=[];
+  for(let i=0;i<100;i++){const rw=(i/10)|0;const j=r();a.push({i,k:i===0?-1:rw*10+j*10})}
+  a.sort((p,q)=>p.k-q.k||p.i-q.i);const rk=new Array(100);a.forEach((o,j)=>{rk[o.i]=j});return rk}
+ITEMS.forEach(it=>{it.rk=ranks(it.seed)});
+
+/* ---------------- DOM build (once) ---------------- */
+const mkRect=()=>document.createElementNS(NS,"rect");
+const itemsG=$("#items"),IT=[];
+for(let i=2;i>=0;i--){                     // back to front: rung 3 first, rung 1 on top
+  const g=document.createElementNS(NS,"g"),base=mkRect(),cells=[];
+  g.appendChild(base);
+  for(let k=0;k<100;k++){const c=mkRect();c.setAttribute("visibility","hidden");cells.push(c);g.appendChild(c)}
+  const out=mkRect();out.setAttribute("fill","none");out.setAttribute("stroke",INK);out.setAttribute("stroke-width","1");
+  g.appendChild(out);itemsG.appendChild(g);IT[i]={base,cells,out};
+}
+const ticksEl=$("#ticks"),TK=[],TL=[];
+for(let i=0;i<=10;i++){const a=document.createElement("div");a.className="tk";const b=document.createElement("div");b.className="tl";b.textContent=i;ticksEl.appendChild(a);ticksEl.appendChild(b);TK.push(a);TL.push(b)}
+const G=[0,1,2,3].map(i=>$("#g"+i));
+const B=[0,1,2].map(i=>({root:$("#b"+i),tag:$("#b"+i+" .tag"),nm:$("#b"+i+" .nm"),vv:$("#b"+i+" .vv"),num:$("#b"+i+" .num"),dg:$("#b"+i+" .dg"),bk:$("#b"+i+" .bk"),l1:$("#b"+i+" .l1"),bar:$("#b"+i+" .bar i")}));
+const LR=[0,1,2].map(i=>({root:$("#lr"+i),dot:$("#lr"+i+" .dot"),em:$("#lr"+i+" em")}));
+
+const setR=(el,x,y,w,h)=>{el.setAttribute("x",x);el.setAttribute("y",y);el.setAttribute("width",w);el.setAttribute("height",h)};
+function gridPath(sp){
+  let d="";const m0=Math.ceil((0-AX)/sp),m1=Math.floor((W-AX)/sp);
+  for(let m=m0;m<=m1;m++){d+="M"+(Math.round(AX+m*sp)+.5)+" 0V"+H}
+  const n0=Math.ceil((AY-H)/sp),n1=Math.floor(AY/sp);
+  for(let n=n0;n<=n1;n++){d+="M0 "+(Math.round(AY-n*sp)+.5)+"H"+W}
+  return d}
+
+/* one rung: base frame + 100 blocks that fill in seeded row order, flash, then settle */
+function drawItem(i,t,S,sup){
+  const it=ITEMS[i],o=IT[i];
+  const solid=mixc(ACC,SUP,sup),pale=mixc(solid,BG,.8);
+  const cs=S/10,k=smooth(clamp((cs-4)/6));
+  const done=t>=it.cf[1]+.35,kk=done?k:1;
+  setR(o.base,AX,AY-S,S,S);
+  o.base.setAttribute("fill",kk>=.999?pale:mixc(solid,pale,kk));
+  const show=S>=2&&kk>.001;
+  const dt=(it.cf[1]-it.cf[0])/99,inset=cs>=8?1:0;
+  for(let idx=0;idx<100;idx++){
+    const cell=o.cells[idx],ct=it.cf[0]+it.rk[idx]*dt;
+    if(!show||t<ct){cell.setAttribute("visibility","hidden");continue}
+    const c=idx%10,r=(idx/10)|0;
+    const x0=AX+Math.round(S*c/10)+inset,x1=AX+Math.round(S*(c+1)/10)-inset;
+    const y1=AY-Math.round(S*r/10)-inset,y0=AY-Math.round(S*(r+1)/10)+inset;
+    setR(cell,x0,y0,Math.max(0,x1-x0),Math.max(0,y1-y0));
+    const f=t<ct+.3?.6*(1-eo2(seg(t,ct,ct+.3))):0;
+    cell.setAttribute("fill",f>.004?mixc(solid,"#FFFFFF",f):solid);
+    cell.setAttribute("visibility","visible");
+  }
+  setR(o.out,AX+.5,AY-S+.5,Math.max(0,S-1),Math.max(0,S-1));
+  o.out.setAttribute("stroke-opacity",f3(sup));
+}
+
+/* ---------------- draw(t): every visible property is a function of t ---------------- */
+function draw(t){
+  /* camera: log zoom about the anchor. Two decade pull-backs + a slow push-in during each hold */
+  const P1=eio(seg(t,PB[0][0],PB[0][1])),P2=eio(seg(t,PB[1][0],PB[1][1]));
+  const creep=CREEP*seg(t,0,PB[0][0])*(1-P1)+CREEP*seg(t,PB[0][1],PB[1][0])*(1-P2)+CREEP*seg(t,PB[1][1],DUR);
+  const z=Math.pow(10,-(P1+P2)+creep);
+  const intro=eo2(seg(t,0,.6));
+
+  /* background log grid: three/four decades of lines cross-fade as the camera pulls back */
+  for(let k=0;k<4;k++){
+    const sp=BASE/10*Math.pow(10,k)*z;
+    const a=.085*smooth(clamp((sp-10)/26))*intro;
+    if(a<.003){G[k].setAttribute("d","");G[k].setAttribute("stroke-opacity","0");continue}
+    G[k].setAttribute("d",gridPath(sp));G[k].setAttribute("stroke-opacity",f3(a));
+  }
+
+  /* rung sides (px): world side 648 x 10^i, grows from the anchor, then scaled by the zoom */
+  const Gw=ITEMS.map(it=>eo3(seg(t,it.g[0],it.g[1])));
+  const S=[0,1,2].map(i=>Math.round(BASE*Math.pow(10,i)*Gw[i]*z));
+  const sup=[smooth(seg(t,PB[0][0],PB[0][0]+.6)),smooth(seg(t,PB[1][0],PB[1][0]+.6)),0];
+  drawItem(2,t,S[2],sup[2]);drawItem(1,t,S[1],sup[1]);drawItem(0,t,S[0],sup[0]);
+
+  /* fictional country budget: dashed square inside rung 3, area = $120 B */
+  const Gb=eo3(seg(t,10.55,11.35));
+  const Sb=Math.round(BASE*100*z*Math.sqrt(BUDGET/ITEMS[2].V)*Gb);
+  const bud=$("#budget");
+  if(Sb>=4){setR(bud,AX+1,AY-Sb+1,Sb-2,Sb-2);bud.setAttribute("visibility","visible");bud.setAttribute("stroke-dashoffset",f3(-t*26))}
+  else bud.setAttribute("visibility","hidden");
+  const bc=$("#bchip"),bo=eo2(seg(t,11.1,11.5));
+  bc.style.opacity=f3(bo);bc.style.right=(W-(AX+Sb-12))+"px";bc.style.top=(AY-Sb+12+Math.round(10*(1-bo)))+"px";
+
+  /* scale chip + sublabel + ruler caption: odometer ticks over at each pull-back midpoint (0.3 s) */
+  const od=eio(seg(t,PB[0][0]+.7-.15,PB[0][0]+.7+.15))+eio(seg(t,PB[1][0]+.7-.15,PB[1][0]+.7+.15));
+  $("#chipin").style.top=(-Math.round(od*52))+"px";
+  $("#chipsubin").style.top=(-Math.round(od*20))+"px";
+  $("#rcapin").style.top=(-Math.round(od*20))+"px";
+  $("#chip").style.opacity=f3(eo2(seg(t,.05,.4)));
+  $("#chipsub").style.opacity=f3(eo2(seg(t,.15,.5)));
+  const io=eo2(seg(t,.1,.5));$("#intro").style.opacity=f3(io);$("#intro").style.transform="translateY("+Math.round(12*(1-io))+"px)";
+  $("#topr").style.opacity=f3(eo2(seg(t,.2,.6)));
+  $("#source").style.opacity=f3(eo2(seg(t,.3,.7)));
+
+  /* ruler: its length is the side of the rung the camera is framing (10 cells), so it follows the creep */
+  const len=BASE*Math.pow(10,creep),cellW=len/10,ro=eo2(seg(t,.1,.6));
+  const rl=$("#rline");rl.style.left=AX+"px";rl.style.width=Math.round(len)+"px";rl.style.opacity=f3(.5*ro);
+  for(let i=0;i<=10;i++){const x=AX+Math.round(i*cellW);TK[i].style.left=x+"px";TK[i].style.opacity=f3(.55*ro);TL[i].style.left=x+"px";TL[i].style.opacity=f3(ro)}
+  $("#rcap").style.opacity=f3(ro);
+  let sw=0,sx=0;
+  for(const [a,b] of PB){const s=seg(t,a,b);if(s>0&&s<1){sw=Math.sin(Math.PI*s);sx=AX+Math.round((len-140)*eio(s))}}
+  const swp=$("#rsweep");swp.style.opacity=f3(.9*sw);swp.style.left=sx+"px";
+
+  /* rung text blocks, blocks counter, legend */
+  const nb=[];
+  for(let i=0;i<3;i++){
+    const it=ITEMS[i],b=B[i];
+    const outp=it.out==null?0:eo2(seg(t,it.out,it.out+.3));
+    b.root.style.opacity=f3(1-outp);b.root.style.transform="translateY("+(-Math.round(14*outp))+"px)";
+    const tg=seg(t,it.nm[0]-.1,it.nm[0]+.2);b.tag.style.opacity=f3(tg);
+    const nr=seg(t,it.nm[0],it.nm[1]);b.nm.style.opacity=f3(eo2(nr));b.nm.style.transform="translateY("+Math.round(20*(1-eo3(nr)))+"px)";
+    const vo=seg(t,it.vc[0],it.vc[0]+.2);b.vv.style.opacity=f3(vo);b.dg.style.opacity=f3(vo);
+    const p=eo2(seg(t,it.vc[0],it.vc[1]));
+    b.num.textContent=fmtD(it.big*p,it.dec);b.dg.textContent="$"+fmtI(it.V*p);
+    const dtb=(it.cf[1]-it.cf[0])/99;
+    const n=t<it.cf[0]?0:1+clamp(Math.floor((t-it.cf[0])/dtb),0,99);
+    b.bk.style.opacity=f3(seg(t,it.cf[0]-.05,it.cf[0]+.25));b.l1.textContent="BLOK "+n+" / 100";b.bar.style.width=Math.round(480*n/100)+"px";
+    /* legend */
+    const lo=eo2(seg(t,it.rowIn,it.rowIn+.4)),L=LR[i];
+    L.root.style.opacity=f3(lo);L.root.style.transform="translateX("+(-Math.round(16*(1-eo3(seg(t,it.rowIn,it.rowIn+.4)))))+"px)";
+    L.em.style.opacity=f3(seg(t,it.vc[1]-.3,it.vc[1]));
+    L.dot.style.background=mixc(ACC,SUP,sup[i]);
+    nb.push(lo);
+  }
+  $("#rail").style.height=Math.round(96*(nb[1]+nb[2]))+"px";
+
+  /* area-multiplier readout counts on the zoom curve during each pull-back */
+  let ro2=0;
+  PB.forEach(([a,b])=>{ro2=Math.max(ro2,eo2(seg(t,a+.3,a+.55))*(1-eo2(seg(t,b+.4,b+.7))))});
+  const rd=$("#rd");rd.style.opacity=f3(ro2);
+  const Q=PB.map(([a,b])=>eio(seg(t,a,b-.2)));            // settles 0.2 s before the zoom ends, then holds
+  rd.querySelector(".rn").textContent="× "+fmtI(Math.pow(10,2*(Q[0]+Q[1])));
+
+  /* callout: rung 3 against the country budget */
+  const co=$("#co"),cp=eo2(seg(t,10.95,11.3));
+  co.style.opacity=f3(cp);co.style.transform="translateY("+Math.round(16*(1-cp))+"px)";
+  co.querySelector(".cn").textContent=fmtD(1+(420e9/BUDGET-1)*eo2(seg(t,11.0,11.9)),1)+"×";
+
+  /* finale: leader from rung 1's last speck, a pulse ring, and the 10,000x count */
+  const s0=S[0],mx=AX+s0/2,my=AY-s0/2;
+  const lp=eo3(seg(t,9.75,10.35)),ld=$("#leader");
+  ld.setAttribute("d","M"+(AX+3)+" "+(AY-3)+" L"+(AX-30)+" "+(AY+30)+" H130");
+  ld.setAttribute("stroke-dashoffset",f3(560*(1-lp)));ld.setAttribute("opacity",lp>0?"1":"0");
+  const mk=$("#mark"),mo=eo2(seg(t,9.6,9.85));
+  mk.setAttribute("cx",f3(mx));mk.setAttribute("cy",f3(my));mk.setAttribute("opacity",f3(mo));
+  const ring=$("#ring"),fr=t>=9.65?((t-9.65)*.85)%1:0;
+  ring.setAttribute("cx",f3(mx));ring.setAttribute("cy",f3(my));ring.setAttribute("r",f3(5+28*eo2(fr)));
+  ring.setAttribute("opacity",t>=9.65?f3(.85*(1-fr)):"0");
+  const pl1=$("#pl1"),pl2=$("#pl2"),po=eo2(seg(t,10.0,10.4));
+  pl1.style.opacity=f3(po);pl2.style.opacity=f3(po);
+  pl2.textContent="ZENİT = "+fmtI(Math.pow(10,4*eo2(seg(t,10.0,10.9))))+" × BU NOKTA (ALAN)";
+}
+
+/* ---------------- HyperFrames contract: one paused timeline ---------------- */
+const proxy={t:0};
+const tl=gsap.timeline({paused:true});
+tl.to(proxy,{t:DUR,duration:DUR,ease:"none",onUpdate:()=>draw(proxy.t)},0);
+window.__timelines=window.__timelines||{};window.__timelines.main=tl;
+window.DUR=DUR;
+window.__seek=t=>{tl.seek(t,false);proxy.t=t;draw(t)};
+document.fonts.ready.then(()=>{draw(0);window.READY=true});
+})();
+</script>
+</body>
+</html>

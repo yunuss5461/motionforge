@@ -1,0 +1,311 @@
+<!doctype html>
+<!--
+  motionforge style preview: line-race-editorial (16:9, 9 s, 30 fps)
+  © 2026 motionforge contributors, MIT
+
+  A newspaper-grade line chart that races through time. Five fictional drink brands, 2004 to 2024,
+  one story line (Bubbla, accent red), one rival (Fizzo, steel blue), three quiet greys. Warm paper,
+  horizontal hairlines only, no legend: each name and its current value ride the tip of its line.
+
+  What happens in 9 s
+    0.0 to 0.9   headline fades up, hairlines and the zero rule draw from the left, labels arrive
+    0.9 to 6.9   a clip reveals every line left to right at 0.3 s per year; the labels travel with the
+                 tips and slide apart (30 px minimum gap, 0.3 s smoothstep, thin leader) whenever two
+                 tips cross: Kolara/Nordik, Bubbla/Kolara, Bubbla/Fizzo (the story overtake, with a
+                 pulse ring and a note), Zesto/Nordik, Zesto/Kolara
+    5.5          record high: Bubbla clears Fizzo's 2009 peak, the y-axis rescales, a dashed
+                 "onceki zirve" line holds for 2 s, a second note slides in
+    6.9 to 9.0   non-story lines drop to 40 %, the Bubbla label grows from 22 to 28 px, the deck line
+                 turns into the verdict, one last ring pulses on the tip
+
+  How it stays seek-pure: every visible property is a function of t. Line tips, label offsets, the
+  axis maximum and the hairline steps are computed from the data tables and t alone: the axis maximum
+  is the centred, smoothed running maximum of the data, label offsets are a weighted average of the
+  collision resolver over the last 0.3 s of the same pure function. No previous-frame state, no wall
+  clock, no Math.random (the paper grain is a seeded generator drawn once). Camera is static. No
+  transforms scale anything, no will-change.
+
+  Excerpt note: STYLE.md asks for 0.3 to 1.0 s per step and 2 to 8 lines; this preview uses the fastest
+  rate (0.3 s) and five lines, so one overtake and one record fit into 9 s. The notes hold 2.2 s, not 3.
+
+  Fonts: only the bundled families. Stand-ins: Newsreader -> Instrument Serif 400 (headline, deck;
+  it has no 600 weight, so no faux bold), IBM Plex Sans -> Inter 500/700 (labels, notes), IBM Plex Mono
+  -> JetBrains Mono 500 (axis ticks). Copy is Turkish on purpose (ş ğ ı İ); latin and latin-ext faces
+  are both declared. Brands, numbers and notes are fictional sample data (örnek veri).
+-->
+<html lang="tr" data-resolution="landscape">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<script src="assets/vendor/gsap.min.js"></script>
+<style>
+@font-face{font-family:"Inter";font-weight:500;font-display:block;src:url(assets/fonts/inter-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:500;font-display:block;src:url(assets/fonts/inter-latin-ext-500-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Inter";font-weight:700;font-display:block;src:url(assets/fonts/inter-latin-700-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:700;font-display:block;src:url(assets/fonts/inter-latin-ext-700-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:normal;font-display:block;src:url(assets/fonts/instrument-serif-latin-400-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:normal;font-display:block;src:url(assets/fonts/instrument-serif-latin-ext-400-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:italic;font-display:block;src:url(assets/fonts/instrument-serif-latin-400-italic.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:italic;font-display:block;src:url(assets/fonts/instrument-serif-latin-ext-400-italic.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"JetBrains Mono";font-weight:500;font-display:block;src:url(assets/fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"JetBrains Mono";font-weight:500;font-display:block;src:url(assets/fonts/jetbrains-mono-latin-ext-500-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+:root{--bg:#F6F1E7;--ink:#1F1D1A;--accent:#C8102E;--sup:#6E8CA0;--sup2:#B8B0A2;--grid:#E3DCCD;
+  --t-sup:#52748A;--t-grey:#7C7567;
+  --f-serif:"Instrument Serif",serif;--f-sans:"Inter",sans-serif;--f-mono:"JetBrains Mono",monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;background:var(--bg);overflow:hidden}
+#root{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--bg);font-family:var(--f-sans);color:var(--ink);font-feature-settings:"tnum" 1,"lnum" 1}
+#chart{position:absolute;left:0;top:0;width:1920px;height:1080px}
+#grain{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;opacity:.028}
+#headline{position:absolute;left:120px;top:86px;height:64px;font:400 56px/64px var(--f-serif);letter-spacing:-.01em;white-space:nowrap}
+.deck{position:absolute;left:120px;top:164px;height:38px;font:italic 400 29px/38px var(--f-serif);color:#4A463F;white-space:nowrap}
+.deck b{font-weight:400;color:var(--accent)}
+#unit{position:absolute;left:120px;top:228px;font:500 16px/20px var(--f-mono);color:#7C7567;white-space:nowrap}
+.yt{position:absolute;left:0;width:108px;height:20px;text-align:right;font:500 16px/20px var(--f-mono);color:#7C7567;white-space:nowrap;opacity:0}
+.xt{position:absolute;top:920px;width:80px;margin-left:-40px;height:20px;text-align:center;font:500 16px/20px var(--f-mono);color:var(--ink);white-space:nowrap}
+.lab{position:absolute;white-space:nowrap;background:var(--bg);padding:0 6px;opacity:0}
+.lab .n{font-weight:700;letter-spacing:-.005em}
+.lab .v{font-weight:500;margin-left:10px}
+.note{position:absolute;width:280px;font:500 21px/27px var(--f-sans);color:var(--ink);background:var(--bg);opacity:0}
+.note b{font-weight:700}
+.note.a b{color:var(--accent)}
+#dashlab{position:absolute;left:0;top:0;font:500 16px/20px var(--f-mono);color:#5A5448;background:var(--bg);padding:0 4px;white-space:nowrap;opacity:0}
+#source{position:absolute;left:120px;top:1016px;font:500 15px/20px var(--f-sans);color:#7C7567;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="root" class="clip" data-composition-id="main" data-start="0" data-duration="9" data-width="1920" data-height="1080" data-track-index="0">
+  <svg id="chart" width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+    <g id="grid"></g>
+    <g id="xticks"></g>
+    <line id="zero" x1="120" y1="900" x2="120" y2="900" stroke="#1F1D1A" stroke-width="1.5"/>
+    <path id="area" fill="#C8102E" fill-opacity="0.06" stroke="none"/>
+    <g id="lines" fill="none" stroke-linejoin="round" stroke-linecap="round"></g>
+    <line id="dash" stroke="#1F1D1A" stroke-opacity=".7" stroke-width="1.5" stroke-dasharray="7 6"/>
+    <g id="leaders"></g>
+    <g id="dots"></g>
+    <g id="marks"></g>
+  </svg>
+  <div id="yticks"></div>
+  <div id="xlabels"></div>
+  <div id="unit">milyon kasa</div>
+  <div id="headline">Bubbla, Fizzo’yu nasıl geçti?</div>
+  <div class="deck" id="deck1">Beş içecek markasının yıllık satışı, 2004–2024</div>
+  <div class="deck" id="deck2">Yirmi yılda <b>30 milyon</b> kasadan <b>300 milyon</b> kasaya: tam on kat.</div>
+  <div id="dashlab">önceki zirve · 205</div>
+  <div id="labels"></div>
+  <div class="note a" id="note1"><b>2015:</b> Bubbla, Fizzo’yu geçip lider oldu.</div>
+  <div class="note" id="note2"><b>2019:</b> Bubbla, Fizzo’nun 2009 zirvesini aştı.</div>
+  <div id="source">Kaynak: örnek veri (kurgusal markalar). Dikey eksen sıfırdan başlar. motionforge stil önizlemesi.</div>
+  <canvas id="grain" width="512" height="512"></canvas>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ---------------- timing ---------------- */
+const Y0=2004, N=20, T0=0.9, SPY=0.3, DUR=9.0;          // race runs T0 .. T0+N*SPY = 6.9 s
+const PX0=120, PX1=1560, PYB=900, PH=640;               // plot box (STYLE.md section 6)
+
+/* ---------------- fictional data: sales per year, million cases (örnek veri) ---------------- */
+const SER=[
+ {id:"bubbla",name:"Bubbla",role:"story",line:"#C8102E",txt:"#C8102E",w:4.5,r:4.2,
+  Y:[30,33,37,43,51,61,73,87,103,121,141,160,176,186,194,203,211,222,241,268,300]},
+ {id:"fizzo", name:"Fizzo", role:"sup",  line:"#6E8CA0",txt:"#52748A",w:3,r:3,
+  Y:[118,130,146,166,188,205,203,198,194,189,184,178,172,166,160,153,147,141,135,129,124]},
+ {id:"kolara",name:"Kolara",role:"grey", line:"#B8B0A2",txt:"#7C7567",w:3,r:3,
+  Y:[96,104,112,121,130,138,144,148,150,148,145,141,136,131,126,120,115,110,105,101,97]},
+ {id:"nordik",name:"Nordik",role:"grey", line:"#B8B0A2",txt:"#7C7567",w:3,r:3,
+  Y:[110,112,115,117,118,118,116,113,110,106,102,98,95,92,89,86,83,80,77,75,72]},
+ {id:"zesto", name:"Zesto", role:"grey", line:"#B8B0A2",txt:"#7C7567",w:3,r:3,
+  Y:[14,17,21,26,32,38,45,53,61,69,77,85,92,98,102,105,107,109,110,111,112]}];
+const IB=0, IF=1;                                        // story and rival indices
+
+/* ---------------- monotone cubic interpolation (Fritsch-Carlson) ---------------- */
+SER.forEach(b=>{const y=b.Y,n=y.length,d=[],m=new Array(n);
+  for(let i=0;i<n-1;i++)d.push(y[i+1]-y[i]);
+  m[0]=d[0];m[n-1]=d[n-2];
+  for(let i=1;i<n-1;i++)m[i]=d[i-1]*d[i]<=0?0:(d[i-1]+d[i])/2;
+  for(let i=0;i<n-1;i++){if(d[i]===0){m[i]=m[i+1]=0;continue}const a=m[i]/d[i],c=m[i+1]/d[i],h=a*a+c*c;if(h>9){const s=3/Math.sqrt(h);m[i]=s*a*d[i];m[i+1]=s*c*d[i];}}
+  b.M=m;});
+function val(b,x){if(x<=0)return b.Y[0];if(x>=N)return b.Y[N];const i=Math.floor(x),s=x-i,y0=b.Y[i],y1=b.Y[i+1],m0=b.M[i],m1=b.M[i+1],s2=s*s,s3=s2*s;
+  return Math.max(0,(2*s3-3*s2+1)*y0+(s3-2*s2+s)*m0+(-2*s3+3*s2)*y1+(s3-s2)*m1);}
+
+/* ---------------- helpers ---------------- */
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const seg=(t,a,b)=>clamp((t-a)/(b-a));
+const eo3=x=>1-Math.pow(1-x,3), eio2=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2, sm=x=>x*x*(3-2*x);
+const X=x=>PX0+x/N*(PX1-PX0);
+const Yp=(v,m)=>PYB-v/m*PH;
+const prog=t=>clamp((t-T0)/SPY,0,N);                     // years since 2004, continuous
+const f1=v=>String(Math.round(v));
+const $=s=>document.querySelector(s);
+const NSV="http://www.w3.org/2000/svg";
+function mk(tag,attrs,parent){const e=document.createElementNS(NSV,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+function rng(seed){let x=seed>>>0||0x9e3779b9;return()=>{x^=x<<13;x>>>=0;x^=x>>>17;x^=x<<5;x>>>=0;return x/4294967296}}
+
+/* ---------------- key moments, found once at load by sampling (deterministic) ---------------- */
+const PEAK=Math.max(...SER[IF].Y), XPEAK=SER[IF].Y.indexOf(PEAK);          // Fizzo 205 in 2009
+let XC=0,XR=0;
+for(let x=0;x<=N;x+=0.002){if(!XC&&val(SER[IB],x)>=val(SER[IF],x)&&x>1)XC=x;if(!XR&&val(SER[IB],x)>=PEAK&&x>1)XR=x}
+const TC=T0+XC*SPY, TR=T0+XR*SPY;                                          // overtake, record
+
+/* ---------------- axis maximum: running max, centred smoothing, 12 % headroom ---------------- */
+const MS=0.05, MN=Math.round(N/MS), CM=[];
+{let run=0;for(let k=0;k<=MN;k++){const u=k*MS;let m=0;SER.forEach(s=>{m=Math.max(m,val(s,u))});run=Math.max(run,m);CM.push(run)}}
+const cm=x=>{const k=clamp(x/MS,0,MN),i=Math.floor(k),f=k-i;return i>=MN?CM[MN]:CM[i]*(1-f)+CM[i+1]*f};
+function ymaxAt(x){let a=0;const K=10;for(let j=-K;j<=K;j++)a+=cm(x+1.0*j/K);a/=2*K+1;return Math.max(a*1.12,cm(x)*1.06)}
+
+/* ---------------- label collision: 30 px minimum gap, offsets smoothed over 0.3 s ---------------- */
+const GAP=30, NSM=13, DT=0.025, WT=[];let WS=0;
+for(let k=0;k<NSM;k++){const s=(k+.5)/NSM,w=6*s*(1-s);WT.push(w);WS+=w}
+function place(des){
+  const idx=des.map((_,i)=>i).sort((a,b)=>des[a]-des[b]||a-b), cl=[];
+  for(const i of idx){
+    cl.push({m:[i],y:des[i]});
+    while(cl.length>1){
+      const b=cl[cl.length-1],a=cl[cl.length-2];
+      if(a.y+a.m.length*GAP>b.y){const m=a.m.concat(b.m);let s=0;m.forEach((q,k)=>{s+=des[q]-k*GAP});cl.splice(cl.length-2,2,{m,y:s/m.length})}
+      else break;
+    }
+  }
+  const out=new Array(des.length);cl.forEach(c=>c.m.forEach((q,k)=>{out[q]=c.y+k*GAP}));return out;
+}
+function offsetsAt(t){
+  const acc=new Array(SER.length).fill(0);
+  for(let k=0;k<NSM;k++){
+    const x=prog(Math.max(0,t-k*DT)),m=ymaxAt(x),des=SER.map(s=>Yp(val(s,x),m)),pl=place(des);
+    pl.forEach((p,i)=>{acc[i]+=WT[k]*(p-des[i])});
+  }
+  return acc.map(a=>a/WS);
+}
+
+/* ---------------- build DOM ---------------- */
+const gridG=$("#grid"), POOL=[];
+for(let i=0;i<20;i++){const l=mk("line",{x1:PX0,x2:PX0,y1:0,y2:0,stroke:"#E3DCCD","stroke-width":1},gridG);const d=document.createElement("div");d.className="yt";$("#yticks").appendChild(d);POOL.push({l,d})}
+const LADDER=[];for(let e=0;e<5;e++)[1,2,5].forEach(m=>LADDER.push(m*Math.pow(10,e)));
+
+const xtG=$("#xticks"), XL=[];
+for(let i=0;i<=N;i++){const major=i%4===0;mk("line",{x1:X(i),x2:X(i),y1:PYB,y2:PYB+(major?9:5),stroke:"#1F1D1A","stroke-width":1,"stroke-opacity":major?.8:.45},xtG);
+  if(major){const d=document.createElement("div");d.className="xt";d.style.left=X(i)+"px";d.textContent=Y0+i;$("#xlabels").appendChild(d);XL.push({d,i})}}
+const zeroLab=document.createElement("div");zeroLab.className="yt";zeroLab.style.top=(PYB-10)+"px";zeroLab.textContent="0";$("#yticks").appendChild(zeroLab);
+
+const lineEls=SER.map(s=>mk("path",{stroke:s.line,"stroke-width":s.w}));
+const order=[2,3,4,1,0];order.forEach(i=>$("#lines").appendChild(lineEls[i]));    // greys, rival, story on top
+const leadEls=SER.map(s=>mk("line",{stroke:s.line,"stroke-width":1},$("#leaders")));
+const dotEls=SER.map(s=>mk("circle",{r:s.r,fill:s.line},$("#dots")));
+const labEls=SER.map(s=>{const d=document.createElement("div");d.className="lab";d.style.color=s.txt;d.innerHTML=`<span class="n">${s.name}</span><span class="v"></span>`;$("#labels").appendChild(d);return{d,v:d.querySelector(".v")}});
+
+const ringC=mk("circle",{r:4,fill:"none",stroke:"#C8102E","stroke-width":1.6,opacity:0},$("#marks"));
+const ringR=mk("circle",{r:4,fill:"none",stroke:"#C8102E","stroke-width":1.6,opacity:0},$("#marks"));
+const ringE=mk("circle",{r:4,fill:"none",stroke:"#C8102E","stroke-width":1.6,opacity:0},$("#marks"));
+const pinC=mk("circle",{r:4,fill:"#F6F1E7",stroke:"#C8102E","stroke-width":2,opacity:0},$("#marks"));
+const pinR=mk("circle",{r:4,fill:"#F6F1E7",stroke:"#C8102E","stroke-width":2,opacity:0},$("#marks"));
+const leadC=mk("line",{stroke:"#C8102E","stroke-width":1,opacity:0},$("#marks"));
+const leadR=mk("line",{stroke:"#1F1D1A","stroke-width":1,opacity:0},$("#marks"));
+
+/* static paper grain, seeded, drawn once */
+{const c=$("#grain"),g=c.getContext("2d"),im=g.createImageData(512,512),r=rng(23);for(let i=0;i<im.data.length;i+=4){const v=r()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}g.putImageData(im,0,0)}
+$("#grain").style.cssText="width:1920px;height:1080px";
+
+/* notes: fixed boxes in the top band, leaders reach the moving points */
+const NOTE1={x:700,y:268}, NOTE2={x:1000,y:268}, NH=54;
+function noteState(t,t0,hold){                 // slide in 16 px / 0.35 s, hold, fade 0.3 s
+  const a=eo3(seg(t,t0,t0+.35)), b=1-seg(t,t0+.35+hold,t0+.35+hold+.3);
+  return{o:clamp(a)*clamp(b),dy:(1-a)*-16};
+}
+
+/* ---------------- draw(t): every visible property is a function of t ---------------- */
+function draw(t){
+  const x=prog(t), m=ymaxAt(x);
+  /* intro */
+  const hl=eo3(seg(t,.05,.55)); $("#headline").style.opacity=hl; $("#headline").style.transform=`translateY(${((1-hl)*18).toFixed(2)}px)`;
+  const dk=eo3(seg(t,.2,.7)), dOut=eo3(seg(t,7.3,7.7)), dIn=eo3(seg(t,7.5,8.0));
+  $("#deck1").style.opacity=dk*(1-dOut); $("#deck1").style.transform=`translateY(${((1-dk)*14-dOut*10).toFixed(2)}px)`;
+  $("#deck2").style.opacity=dIn;         $("#deck2").style.transform=`translateY(${((1-dIn)*12).toFixed(2)}px)`;
+  const ax=eo3(seg(t,.1,.7));
+  $("#zero").setAttribute("x2",(PX0+(PX1-PX0)*ax).toFixed(2));
+  $("#unit").style.opacity=eo3(seg(t,.4,.8));
+  XL.forEach(o=>{o.d.style.opacity=eo3(seg(t,.3+o.i*.02,.8+o.i*.02))*(.5+.5*sm(clamp((x-o.i+.6)/.6)))});
+  $("#xticks").setAttribute("opacity",ax);
+
+  /* hairlines: nice steps (1, 2, 5 x 10^n) cross-fade, labels only for the dominant step */
+  const target=m/4;let k=0;while(k<LADDER.length-1&&LADDER[k+1]<=target)k++;
+  const s1=LADDER[k],s2=LADDER[Math.min(k+1,LADDER.length-1)];
+  const wmix=s2===s1?0:sm(clamp(((Math.log(target)-Math.log(s1))/(Math.log(s2)-Math.log(s1))-.3)/.4));
+  const seen=new Map();
+  [[s1,1-wmix],[s2,wmix]].forEach(([st,a])=>{for(let v=st;v<m*0.985;v+=st){const key=Math.round(v*1000);seen.set(key,Math.max(seen.get(key)||0,a))}});
+  let pi=0;
+  for(const[key,a]of seen){if(pi>=POOL.length)break;const v=key/1000,y=Yp(v,m),edge=clamp((m*.985-v)/(m*.06)),P=POOL[pi++],al=a*edge;
+    P.l.setAttribute("y1",y.toFixed(2));P.l.setAttribute("y2",y.toFixed(2));P.l.setAttribute("x2",(PX0+(PX1-PX0)*ax).toFixed(2));P.l.setAttribute("opacity",al.toFixed(3));
+    P.d.style.top=(y-10).toFixed(2)+"px";P.d.style.opacity=(eo3(seg(t,.3,.8))*clamp((al-.45)/.3)).toFixed(3);P.d.textContent=v}
+  for(;pi<POOL.length;pi++){POOL[pi].l.setAttribute("opacity",0);POOL[pi].d.style.opacity=0}
+  zeroLab.style.opacity=eo3(seg(t,.3,.8));
+
+  /* outro factors */
+  const drop=eio2(seg(t,7.2,7.8)), dimK=1-.6*drop, grow=eo3(seg(t,7.3,7.9));
+  const raceOn=t>=T0-1e-9?1:0;
+
+  /* lines, tips, labels */
+  const off=offsetsAt(t);
+  const lab=eo3(seg(t,.55,1.05));
+  SER.forEach((s,i)=>{
+    const tip=Yp(val(s,x),m), tx=X(x), story=s.role==="story";
+    const step=.1, n=Math.floor(x/step+1e-9); let d="";
+    for(let q=0;q<=n;q++){const u=q*step;d+=(q?"L":"M")+X(u).toFixed(2)+" "+Yp(val(s,u),m).toFixed(2)}
+    if(x-n*step>1e-6)d+="L"+tx.toFixed(2)+" "+tip.toFixed(2);
+    if(n===0&&x-n*step<=1e-6)d+="L"+tx.toFixed(2)+" "+tip.toFixed(2);
+    const op=(story?1:dimK);
+    lineEls[i].setAttribute("d",d);lineEls[i].setAttribute("opacity",(op*raceOn).toFixed(3));
+    dotEls[i].setAttribute("cx",tx.toFixed(2));dotEls[i].setAttribute("cy",tip.toFixed(2));dotEls[i].setAttribute("opacity",(op*lab).toFixed(3));
+    if(story){ $("#area").setAttribute("d",d+`L${tx.toFixed(2)} ${PYB}L${X(0).toFixed(2)} ${PYB}Z`); $("#area").setAttribute("opacity",raceOn)}
+    /* label rides the tip; offset from the collision resolver slides it, a leader keeps it attached */
+    const fs=story?22+6*grow:22, lh=story?28+6*grow:28, ly=tip+off[i];
+    const L=labEls[i].d; L.style.fontSize=fs.toFixed(2)+"px"; L.style.lineHeight=lh.toFixed(2)+"px";
+    L.style.left=(tx+14).toFixed(2)+"px"; L.style.top=(ly-lh/2).toFixed(2)+"px"; L.style.opacity=(op*lab).toFixed(3);
+    labEls[i].v.textContent=f1(val(s,x));
+    const ao=Math.abs(off[i]), lo=clamp((ao-2)/8);
+    leadEls[i].setAttribute("x1",(tx+3).toFixed(2));leadEls[i].setAttribute("y1",(tip+Math.sign(off[i])*1).toFixed(2));
+    leadEls[i].setAttribute("x2",(tx+16).toFixed(2));leadEls[i].setAttribute("y2",ly.toFixed(2));leadEls[i].setAttribute("opacity",(lo*op*lab).toFixed(3));
+  });
+
+  /* overtake: ring pulse, pin, note */
+  const yC=Yp(val(SER[IB],XC),m), xC=X(XC);
+  const pc=seg(t,TC,TC+.6);
+  ringC.setAttribute("cx",xC.toFixed(2));ringC.setAttribute("cy",yC.toFixed(2));ringC.setAttribute("r",(4+16*eo3(pc)).toFixed(2));ringC.setAttribute("opacity",pc>0&&pc<1?(1-pc).toFixed(3):0);
+  const n1=noteState(t,TC+.05,2.2);
+  pinC.setAttribute("cx",xC.toFixed(2));pinC.setAttribute("cy",yC.toFixed(2));pinC.setAttribute("opacity",n1.o.toFixed(3));
+  const N1=$("#note1");N1.style.left=NOTE1.x+"px";N1.style.top=(NOTE1.y+n1.dy).toFixed(2)+"px";N1.style.opacity=n1.o.toFixed(3);
+  const lx1=clamp(xC,NOTE1.x+14,NOTE1.x+266);
+  leadC.setAttribute("x1",lx1.toFixed(2));leadC.setAttribute("y1",(NOTE1.y+NH+n1.dy+4).toFixed(2));leadC.setAttribute("x2",xC.toFixed(2));leadC.setAttribute("y2",(yC-5).toFixed(2));leadC.setAttribute("opacity",(n1.o*.9).toFixed(3));
+
+  /* record high: axis already rescaling (m), dashed previous high, ring, pin, note */
+  const yR=Yp(val(SER[IB],XR),m), xR=X(XR), yPk=Yp(PEAK,m);
+  const pr=seg(t,TR,TR+.6);
+  ringR.setAttribute("cx",xR.toFixed(2));ringR.setAttribute("cy",yR.toFixed(2));ringR.setAttribute("r",(4+16*eo3(pr)).toFixed(2));ringR.setAttribute("opacity",pr>0&&pr<1?(1-pr).toFixed(3):0);
+  const n2=noteState(t,TR+.05,2.2);
+  pinR.setAttribute("cx",xR.toFixed(2));pinR.setAttribute("cy",yR.toFixed(2));pinR.setAttribute("opacity",n2.o.toFixed(3));
+  const N2=$("#note2");N2.style.left=NOTE2.x+"px";N2.style.top=(NOTE2.y+n2.dy).toFixed(2)+"px";N2.style.opacity=n2.o.toFixed(3);
+  leadR.setAttribute("x1",clamp(xR,NOTE2.x+14,NOTE2.x+266).toFixed(2));leadR.setAttribute("y1",(NOTE2.y+NH+n2.dy+4).toFixed(2));leadR.setAttribute("x2",xR.toFixed(2));leadR.setAttribute("y2",(yR-5).toFixed(2));leadR.setAttribute("opacity",(n2.o*.7).toFixed(3));
+  const dIn2=eo3(seg(t,TR,TR+.5)), dFade=1-seg(t,TR+2.0,TR+2.3);
+  const dx1=X(XPEAK), dx2=dx1+(X(x)-dx1)*dIn2;
+  const dl=$("#dash");dl.setAttribute("x1",dx1.toFixed(2));dl.setAttribute("x2",dx2.toFixed(2));dl.setAttribute("y1",yPk.toFixed(2));dl.setAttribute("y2",yPk.toFixed(2));dl.setAttribute("opacity",(clamp(dIn2*3)*dFade).toFixed(3));
+  const DL=$("#dashlab");DL.style.left=(dx1+14).toFixed(2)+"px";DL.style.top=(yPk-27).toFixed(2)+"px";DL.style.opacity=(eo3(seg(t,TR+.2,TR+.5))*dFade).toFixed(3);
+
+  /* end: one more pulse on the story tip */
+  const pe=seg(t,7.9,8.5);
+  ringE.setAttribute("cx",X(N).toFixed(2));ringE.setAttribute("cy",Yp(val(SER[IB],N),m).toFixed(2));ringE.setAttribute("r",(5+18*eo3(pe)).toFixed(2));ringE.setAttribute("opacity",pe>0&&pe<1?(1-pe).toFixed(3):0);
+}
+
+/* ---------------- HyperFrames contract: one paused timeline ---------------- */
+const proxy={t:0};
+const tl=gsap.timeline({paused:true});
+tl.to(proxy,{t:DUR,duration:DUR,ease:"none",onUpdate:()=>draw(proxy.t)},0);
+window.__timelines=window.__timelines||{};window.__timelines.main=tl;
+window.DUR=DUR;window.__KEY={XC,XR,TC,TR};
+window.__seek=t=>{tl.seek(t,false);proxy.t=t;draw(t)};
+document.fonts.ready.then(()=>{draw(0);window.READY=true});
+})();
+</script>
+</body>
+</html>

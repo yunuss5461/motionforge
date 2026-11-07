@@ -1,0 +1,394 @@
+<!doctype html>
+<!--
+  motionforge style preview: race-eras (16:9, 14 s, 30 fps)
+  © 2026 motionforge contributors, MIT
+
+  A ranking race whose design ages with the data. This excerpt runs 1970 to 1999 and shows the
+  signature move twice: the era handover into the 1980s and into the 1990s (1.2 s feathered
+  left-to-right wipe, power2.inOut). Background, motif, grain, bar finish, logo roundels, headline
+  typeface and year typeface change; the bars, their series colours, positions and values do not.
+  The 1980s also carry the "nostalgia freeze": at a lead change the race slows to 25 % for 1.5 s
+  while the event card appears in that era's typography.
+
+  How it stays seek-pure: three full era layers are stacked. Layer k is masked by a soft-edged
+  gradient whose edge position is a pure function of t; every layer is redrawn from the same shared
+  state (ranks, values, ticks) while visible. Race time is a precomputed table (slow-down included),
+  so prog(t) is a lookup. No previous-frame state, no wall clock, no Math.random (seeded noise once).
+
+  Excerpt note: STYLE.md asks for at least six seconds per era and a longer span; this 14 s preview
+  holds each era for about 3.5 s so two handovers fit. Eras 1950s/60s (halftone) and 2000s/2010s are
+  defined in STYLE.md only; this scene builds the 1970s, 1980s and 1990s.
+
+  Fonts: only the three bundled families. Stand-ins for the STYLE.md display faces: Fraunces ->
+  Instrument Serif with a 1.6 px stroke (1970s), Unbounded -> JetBrains Mono 700 uppercase (1980s),
+  Archivo expanded -> Inter 800 uppercase stretched 1.2x (1990s). Body, names and values stay Inter.
+  Copy is Turkish on purpose (ş ğ ı İ Ç); both latin and latin-ext faces are declared.
+  Brands, numbers and events are fictional sample data (örnek veri).
+-->
+<html lang="tr" data-resolution="landscape">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<script src="assets/vendor/gsap.min.js"></script>
+<style>
+@font-face{font-family:"Inter";font-weight:500;src:url(assets/fonts/inter-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:500;src:url(assets/fonts/inter-latin-ext-500-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Inter";font-weight:700;src:url(assets/fonts/inter-latin-700-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:700;src:url(assets/fonts/inter-latin-ext-700-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Inter";font-weight:800;src:url(assets/fonts/inter-latin-800-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:800;src:url(assets/fonts/inter-latin-ext-800-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Instrument Serif";font-weight:400;src:url(assets/fonts/instrument-serif-latin-400-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Instrument Serif";font-weight:400;src:url(assets/fonts/instrument-serif-latin-ext-400-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"JetBrains Mono";font-weight:500;src:url(assets/fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"JetBrains Mono";font-weight:500;src:url(assets/fonts/jetbrains-mono-latin-ext-500-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"JetBrains Mono";font-weight:700;src:url(assets/fonts/jetbrains-mono-latin-700-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"JetBrains Mono";font-weight:700;src:url(assets/fonts/jetbrains-mono-latin-ext-700-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+:root{--accent:#E8B13A;--f-body:"Inter",sans-serif;--f-mono:"JetBrains Mono",monospace;--f-serif:"Instrument Serif",serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;background:#10161D;overflow:hidden}
+#root{position:relative;width:1920px;height:1080px;overflow:hidden;background:#2A1D14;font-family:var(--f-body);font-feature-settings:"tnum" 1,"lnum" 1}
+#cam{position:absolute;inset:0;transform-origin:760px 520px}
+#vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(1500px 950px at 45% 45%,transparent 58%,rgba(0,0,0,.42) 100%)}
+
+/* ---------- one full era layer; layer k>0 is masked by the wipe ---------- */
+.layer{position:absolute;inset:0;overflow:hidden;background:var(--bg);color:var(--ink)}
+.layer .bg{position:absolute;inset:0}
+.layer .grain{position:absolute;left:0;top:0;width:1920px;height:1080px;mix-blend-mode:overlay;pointer-events:none}
+.layer .kick{position:absolute;left:120px;top:76px;font:700 17px/1 var(--f-body);letter-spacing:.2em;color:var(--sup);text-transform:uppercase}
+.layer .kick i{display:inline-block;width:28px;height:2px;background:var(--accent);vertical-align:middle;margin-right:14px;transform-origin:left center}
+.layer .grid{position:absolute;left:0;top:0;width:1920px;height:1080px}
+.tick{position:absolute;top:212px;height:664px;width:1px;background:var(--line)}
+.tick b{position:absolute;top:-30px;left:0;transform:translateX(-50%);font:500 15px/1 var(--f-mono);color:var(--sup);white-space:nowrap}
+.slot{position:absolute;left:120px;width:40px;font:500 20px/56px var(--f-mono);color:var(--sup);text-align:left;opacity:.8}
+.row{position:absolute;left:0;top:0;width:1920px;height:56px}
+.name{position:absolute;left:144px;width:240px;text-align:right;font:700 25px/56px var(--f-body);letter-spacing:-.01em;white-space:nowrap;color:var(--ink)}
+.bar{position:absolute;left:404px;top:0;height:56px}
+.ring{position:absolute;left:400px;top:-4px;height:64px;border:2px solid var(--accent);opacity:0}
+.logo{position:absolute;top:6px;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 21px/1 var(--f-body)}
+.val{position:absolute;top:0;font:700 25px/56px var(--f-body);letter-spacing:-.01em;white-space:nowrap;color:var(--ink)}
+.val small{font:500 16px/1 var(--f-body);color:var(--sup);margin-left:6px;letter-spacing:0}
+.chip{position:absolute;top:13px;height:30px;padding:0 12px;border-radius:15px;background:var(--bg);color:var(--accent);border:1px solid rgba(232,177,58,.65);font:800 14px/28px var(--f-body);letter-spacing:.08em;white-space:nowrap;opacity:0;transform-origin:left center}
+
+/* era 1970s: warm brown, rounded soft gradient bars, cream highlight */
+.e70{--bg:#2A1D14;--ink:#F1E2C8;--sup:#B8A58A;--line:rgba(241,226,200,.10);--card:rgba(241,226,200,.07);--fd:var(--f-serif)}
+.e70 .bg{background:radial-gradient(1100px 760px at 8% -6%,rgba(255,138,40,.07),transparent 70%),#2A1D14}
+.e70 .motif{position:absolute;inset:0;opacity:.085;background:repeating-conic-gradient(from -112deg at 88% 112%,#E9902F 0 4.2deg,transparent 4.2deg 8.4deg);-webkit-mask-image:radial-gradient(1250px 1250px at 88% 112%,#000 8%,transparent 70%);mask-image:radial-gradient(1250px 1250px at 88% 112%,#000 8%,transparent 70%)}
+.e70 .grain{opacity:.05}
+.e70 .bar{border-radius:8px 11px 11px 8px;background:linear-gradient(180deg,var(--cl) 0%,var(--c) 48%,var(--cd) 100%);box-shadow:inset 0 1px 0 rgba(255,244,222,.75)}
+.e70 .ring{border-radius:11px 14px 14px 11px}
+.e70 .logo{background:radial-gradient(circle at 36% 30%,var(--cl),var(--cd) 78%);color:#FFF4DE;border:2px solid rgba(241,226,200,.7)}
+.e70 .stamp{font-family:var(--f-mono)}
+.e70 .year .col{font:400 124px/132px var(--f-serif);-webkit-text-stroke:2.6px var(--ink)}
+
+/* era 1980s: night violet, outline + 30 % fill bars, scanlines, one horizon line */
+.e80{--bg:#0D0820;--ink:#F6F0FF;--sup:#A99ED6;--line:rgba(246,240,255,.10);--card:rgba(246,240,255,.06);--fd:var(--f-mono)}
+.e80 .bg{background:#0D0820}
+.e80 .motif{position:absolute;left:0;top:906px;width:1920px;height:2px;opacity:.8;background:linear-gradient(90deg,transparent 2%,#FF3EA5 28%,#3EE8FF 72%,transparent 98%);box-shadow:0 0 22px 2px rgba(255,62,165,.4)}
+.e80 .bar{border-radius:3px 5px 5px 3px;background:var(--c30);border:2px solid var(--c);box-shadow:0 0 16px var(--c35),inset 0 0 18px var(--c25);overflow:hidden}
+.e80 .bar::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(180deg,rgba(0,0,0,.2) 0 1px,transparent 1px 3px)}
+.e80 .ring{border-radius:4px 6px 6px 4px}
+.e80 .logo{background:#0D0820;color:var(--c);border:2px solid var(--c);box-shadow:0 0 12px var(--c35)}
+.e80 .year .col{font:700 100px/132px var(--f-mono);letter-spacing:-.02em}
+
+/* era 1990s: graphite, chrome bars, brushed metal band behind the year */
+.e90{--bg:#10161D;--ink:#E9EEF2;--sup:#9BA7B2;--line:rgba(233,238,242,.10);--card:rgba(233,238,242,.06);--fd:var(--f-body)}
+.e90 .bg{background:#10161D}
+.e90 .motif{position:absolute;left:1484px;top:232px;width:352px;height:150px;border-radius:12px;opacity:.9;background:repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 1px,rgba(255,255,255,.075) 1px 2px,rgba(255,255,255,0) 2px 4px),linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02) 50%,rgba(255,255,255,.06))}
+.e90 .grain{opacity:.035}
+.e90 .bar{border-radius:12px 14px 14px 12px;background:linear-gradient(180deg,var(--k1) 0%,var(--k2) 50%,var(--k3) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(0,0,0,.28)}
+.e90 .ring{border-radius:14px 16px 16px 14px}
+.e90 .logo{background:radial-gradient(circle at 34% 28%,#FFFFFF,var(--k1) 30%,var(--k2) 68%,var(--k3));color:#0B1117;border:2px solid rgba(255,255,255,.55)}
+.e90 .year .col{font:800 118px/132px var(--f-body);letter-spacing:-.02em}
+
+/* ---------- panel ---------- */
+.panel{position:absolute;left:1500px;top:212px;width:330px}
+.stamp{position:absolute;left:0;top:-4px;font:500 15px/1 var(--f-mono);letter-spacing:.2em;color:var(--sup);text-transform:uppercase;white-space:nowrap}
+.stamp::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:12px;vertical-align:1px}
+.year{position:absolute;left:0;top:26px;height:132px;display:flex;overflow:hidden}
+.year .col{position:relative;width:80px;height:132px;overflow:hidden;color:var(--ink);-webkit-mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent)}
+.year .strip{position:absolute;left:0;top:0;width:100%}
+.year .strip div{height:132px;text-align:center}
+.uline{position:absolute;left:0;top:166px;height:4px;width:320px;background:var(--accent);border-radius:2px;transform-origin:left center}
+.event{position:absolute;left:0;top:216px;width:320px;padding:18px 18px 18px 22px;border-radius:12px;background:var(--card);border:1px solid var(--line);opacity:0}
+.event .stripe{position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:2px}
+.event .ey{font:500 15px/1 var(--f-mono);color:var(--sup);text-transform:uppercase;letter-spacing:.06em}
+.event .et{margin-top:10px;font:500 21px/1.32 var(--f-body);color:var(--ink)}
+.event.fz .et{font-family:var(--fd);font-size:26px;line-height:1.2;font-weight:700}
+.e70 .event.fz .et{font-weight:400;font-size:30px;-webkit-text-stroke:.8px var(--ink)}
+.e80 .event.fz .et{font-size:22px;text-transform:uppercase;letter-spacing:.02em}
+.e90 .event.fz .et{font-weight:800;text-transform:uppercase;font-size:22px}
+.total{position:absolute;left:0;top:452px;width:320px}
+.total .tl{font:700 15px/1 var(--f-body);letter-spacing:.2em;color:var(--sup);text-transform:uppercase}
+.total .tv{margin-top:10px;font:700 34px/1 var(--f-body);letter-spacing:-.02em;color:var(--ink)}
+.total .tv small{font:500 17px/1 var(--f-body);color:var(--sup);margin-left:6px}
+.total svg{margin-top:14px;display:block}
+.spark-line{fill:none;stroke:var(--ink);stroke-width:2}
+.spark-fill{fill:var(--line)}
+.final{position:absolute;left:0;top:452px;width:330px;opacity:0}
+.final .fl{font:700 15px/1 var(--f-body);letter-spacing:.2em;color:var(--accent);text-transform:uppercase}
+.final .ft{margin-top:12px;font:800 30px/1.14 var(--f-body);letter-spacing:-.01em;text-transform:uppercase;color:var(--ink)}
+.final .fs{margin-top:10px;font:500 19px/1.4 var(--f-body);color:var(--sup)}
+.src{position:absolute;left:120px;top:1030px;font:500 15px/1 var(--f-body);color:var(--sup);letter-spacing:.01em;opacity:.85}
+
+/* ---------- headline stack (cross-fades between eras, above all layers) ---------- */
+.hl{position:absolute;left:118px;top:104px;white-space:nowrap;opacity:0}
+.hl .w{display:inline-block;overflow:hidden;vertical-align:top;padding:0 .03em .08em}
+.hl .w span{display:inline-block}
+.hl .yr{color:var(--accent)}
+.hl0{font:400 66px/1.08 var(--f-serif);letter-spacing:-.01em;color:#F1E2C8;-webkit-text-stroke:1.6px #F1E2C8}
+.hl0 .yr{-webkit-text-stroke:1.6px var(--accent)}
+.hl1{font:700 46px/1.3 var(--f-mono);letter-spacing:.04em;color:#F6F0FF;text-transform:uppercase;top:100px}
+.hl2{font:800 54px/1.12 var(--f-body);letter-spacing:.01em;color:#E9EEF2;text-transform:uppercase;transform-origin:0 0}
+.hl2 .in{display:inline-block;transform:scaleX(1.2);transform-origin:0 50%}
+
+/* wipe edge: soft light riding the mask edge, accent thread */
+#edge{position:absolute;top:0;width:160px;height:1080px;pointer-events:none;opacity:0;background:linear-gradient(90deg,rgba(232,177,58,0),rgba(232,177,58,.16));border-right:2px solid rgba(232,177,58,.85);box-shadow:6px 0 28px 2px rgba(232,177,58,.28)}
+</style>
+</head>
+<body>
+<div id="root" class="clip" data-composition-id="main" data-start="0" data-duration="14" data-width="1920" data-height="1080" data-track-index="0">
+  <div id="cam">
+    <div id="layers"></div>
+    <div id="heads"></div>
+    <div id="edge"></div>
+  </div>
+  <div id="vignette"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ---------------- timing ---------------- */
+const DUR=14, INTRO=1.4, OUTRO=1.4, RACE=DUR-INTRO-OUTRO;      // race = 11.2 s of data time
+const Y0=1970, NY=29, TOPN=8, SLOT=78, TOP=212, BAR0=404, BARMAX=1000;
+const W=1920, FEATHER=160, WIPE=1.2;
+
+/* ---------------- helpers ---------------- */
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const seg=(t,a,b)=>clamp((t-a)/(b-a));
+const eo3=x=>1-Math.pow(1-x,3);
+const eio2=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;               // power2.inOut
+const back=x=>{const c=1.7;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const smooth=x=>x*x*(3-2*x);
+function rng(seed){let x=seed>>>0||0x9e3779b9;return()=>{x^=x<<13;x>>>=0;x^=x>>>17;x^=x<<5;x>>>=0;return x/4294967296}}
+const rgb=h=>{const n=parseInt(h.slice(1),16);return[n>>16&255,n>>8&255,n&255]};
+const mix=(a,b,k)=>{const A=rgb(a),B=rgb(b);return`rgb(${A.map((c,i)=>Math.round(c+(B[i]-c)*k)).join(",")})`};
+const rgba=(h,a)=>{const c=rgb(h);return`rgba(${c[0]},${c[1]},${c[2]},${a})`};
+/* Turkish number format: 1.234,5 */
+const fmt=v=>{const s=(Math.round(v*10)/10).toFixed(1),p=s.split(".");return p[0].replace(/\B(?=(\d{3})+(?!\d))/g,".")+","+p[1]};
+
+/* ---------------- fictional data (million cases, yearly 1970..1999) ---------------- */
+const sig=x=>1/(1+Math.exp(-x));
+const BRANDS=[
+ {id:"kolara",name:"Kolara",color:"#D9544D",f:y=>330+110*sig((y-1974)/2.5)-250*sig((y-1992)/3.2)},
+ {id:"fizzo", name:"Fizzo", color:"#3F6FD8",f:y=>150+440*sig((y-1975.2)/2.6)-260*sig((y-1988)/3)},
+ {id:"bubbla",name:"Bubbla",color:"#2FA46F",f:y=>y<1974?0:40+620*sig((y-1994.4)/2.6)},
+ {id:"zesto", name:"Zesto", color:"#E59A2E",f:y=>y<1978?0:80+560*sig((y-1982.4)/2.8)-230*sig((y-1993.5)/2.6)},
+ {id:"nordik",name:"Nordik",color:"#4FA3C7",f:y=>200+60*sig((y-1976)/3)-70*sig((y-1990)/3)},
+ {id:"solva", name:"Solva", color:"#8C5CC9",f:y=>110+190*sig((y-1982)/4)+60*sig((y-1996)/3)},
+ {id:"mirra", name:"Mirra", color:"#D3558F",f:y=>60+300*sig((y-1984)/3)-250*sig((y-1996)/3)},
+ {id:"vexo",  name:"Vexo",  color:"#1FA59A",f:y=>y<1984?0:30+260*sig((y-1993)/2.6)},
+ {id:"lumo",  name:"Lumo",  color:"#A89466",f:y=>120+60*sig((y-1988)/5)},
+ {id:"ardo",  name:"Ardo",  color:"#7C8594",f:y=>260*Math.exp(-((y-1970)/9))+50}];
+BRANDS.forEach(b=>{b.Y=[];for(let i=0;i<=NY;i++)b.Y.push(Math.round(b.f(Y0+i)*10)/10);});
+
+/* monotone cubic interpolation (Fritsch-Carlson) */
+BRANDS.forEach(b=>{const y=b.Y,n=y.length,d=[],m=new Array(n);
+  for(let i=0;i<n-1;i++)d.push(y[i+1]-y[i]);
+  m[0]=d[0];m[n-1]=d[n-2];
+  for(let i=1;i<n-1;i++)m[i]=d[i-1]*d[i]<=0?0:(d[i-1]+d[i])/2;
+  for(let i=0;i<n-1;i++){if(d[i]===0){m[i]=m[i+1]=0;continue}const a=m[i]/d[i],c=m[i+1]/d[i],h=a*a+c*c;if(h>9){const s=3/Math.sqrt(h);m[i]=s*a*d[i];m[i+1]=s*c*d[i];}}
+  b.M=m;});
+function val(b,x){if(x<=0)return b.Y[0];if(x>=NY)return b.Y[NY];const i=Math.floor(x),s=x-i,y0=b.Y[i],y1=b.Y[i+1],m0=b.M[i],m1=b.M[i+1],s2=s*s,s3=s2*s;
+  return Math.max(0,(2*s3-3*s2+1)*y0+(s3-2*s2+s)*m0+(-2*s3+3*s2)*y1+(s3-s2)*m1);}
+
+/* ---------------- race time table: data years as a function of time, with the nostalgia freeze ---------------- */
+const DTT=1/600, NT=Math.round(RACE/DTT), XF=15.1, FD=1.5, SLOW=.25, RAMP=.3;
+function buildTable(v0){const X=new Float64Array(NT+1);let x=0,tfs=-1;
+  for(let i=0;i<NT;i++){const u=i*DTT;if(tfs<0&&x>=XF)tfs=u;let m=1;
+    if(tfs>=0){const a=smooth(seg(u,tfs,tfs+RAMP)),c=smooth(seg(u,tfs+FD-RAMP,tfs+FD));m=1-(1-SLOW)*a*(1-c)}
+    X[i]=x;x+=v0*m*DTT}
+  X[NT]=x;return{X,tfs}}
+let lo=1,hi=8,TAB;for(let k=0;k<44;k++){const mid=(lo+hi)/2;TAB=buildTable(mid);if(TAB.X[NT]<NY)lo=mid;else hi=mid}
+TAB=buildTable((lo+hi)/2);
+const XT=TAB.X, TFS=INTRO+TAB.tfs;
+function prog(t){const u=clamp(t-INTRO,0,RACE)/DTT,i=Math.min(NT-1,Math.floor(u)),f=u-i;return Math.min(NY,XT[i]+(XT[i+1]-XT[i])*f)}
+function tOf(x){if(x<=0)return INTRO;let a=0,b=NT;while(b-a>1){const m=(a+b)>>1;if(XT[m]<x)a=m;else b=m}
+  const f=(x-XT[a])/Math.max(1e-9,XT[b]-XT[a]);return INTRO+(a+f)*DTT}
+
+/* ---------------- eras and handovers ---------------- */
+const ERAS=[{cls:"e70",stamp:"1970'ler",dec:1970},{cls:"e80",stamp:"1980'ler",dec:1980},{cls:"e90",stamp:"1990'lar",dec:1990}];
+const SHIFT=[.3,0];                                                // handover 1 moved 0.3 s later to clear the first lead change
+const HO=[10,20].map((x,i)=>{const tb=tOf(x)+SHIFT[i];return{tb,t0:tb-WIPE/2,t1:tb+WIPE/2}});
+function edgeAt(k,t){return eio2(seg(t,HO[k-1].t0,HO[k-1].t1))*(W+FEATHER)}     // k>=1
+function tPanel(k){const H=HO[k-1];let a=0,b=1;for(let i=0;i<40;i++){const m=(a+b)/2;if(eio2(m)*(W+FEATHER)<1650)a=m;else b=m}return H.t0+a*WIPE}
+const T_PANEL=[null,tPanel(1),tPanel(2)];
+
+/* ---------------- lead changes and events ---------------- */
+const LEADS=[];{let prev=null;for(let x=0;x<=NY;x+=0.01){let bi=0,bv=-1;BRANDS.forEach((b,i)=>{const v=val(b,x);if(v>bv){bv=v;bi=i}});if(prev!==null&&bi!==prev)LEADS.push({t:tOf(x),i:bi,x});prev=bi}}
+const EVENTS=[
+ {t0:tOf(4.4),dur:1.9,b:"fizzo", y:"1974",tx:"Fizzo ülke çapında televizyon reklamına başlıyor"},
+ {t0:TFS+.05,dur:FD+.3,b:"zesto",y:"1985",tx:"Zesto zirveye çıktı: Fizzo'nun dokuz yıllık liderliği sona erdi",fz:true,ey:"Donuk kare · 1985"},
+ {t0:tOf(23.2),dur:1.9,b:"bubbla",y:"1993",tx:"Bubbla şekersiz serisini ülke çapında satışa çıkarıyor"}];
+
+/* ---------------- DOM ---------------- */
+const $=(s,r=document)=>r.querySelector(s);
+const LADDER=[];for(let e=0;e<5;e++)[1,2,5].forEach(m=>LADDER.push(m*Math.pow(10,e)));
+const TOT=[];for(let i=0;i<=NY;i++)TOT.push(BRANDS.reduce((a,b)=>a+b.Y[i],0));const TMAX=Math.max(...TOT)*1.06;
+const layers=[];
+function noiseCanvas(seed){const c=document.createElement("canvas");c.width=512;c.height=288;c.className="grain";const g=c.getContext("2d"),im=g.createImageData(512,288),r=rng(seed);
+  for(let i=0;i<im.data.length;i+=4){const v=r()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}g.putImageData(im,0,0);return c}
+
+ERAS.forEach((E,k)=>{
+  const L=document.createElement("div");L.className="layer "+E.cls;
+  L.innerHTML=`<div class="bg"></div><div class="motif"></div>
+   <div class="kick"><i></i>En çok satan kola markaları</div>
+   <div class="grid"></div><div class="slots"></div><div class="rows"></div>
+   <div class="panel"><div class="stamp">${E.stamp}</div><div class="year"></div><div class="uline"></div>
+     <div class="event"><div class="stripe"></div><div class="ey"></div><div class="et"></div></div>
+     <div class="total"><div class="tl">Toplam pazar</div><div class="tv"></div><svg width="300" height="70" viewBox="0 0 300 70"><path class="spark-fill"/><path class="spark-line"/></svg></div>
+     <div class="final"><div class="fl"></div><div class="ft"></div><div class="fs"></div></div></div>
+   <div class="src">Kaynak: örnek veri (kurgusal) · motionforge stil önizlemesi</div>`;
+  if(E.cls!=="e80"){const nz=noiseCanvas(11+k);L.insertBefore(nz,$(".motif",L).nextSibling)}
+  $("#layers").appendChild(L);
+  const o={el:L,k,E,stamp:$(".stamp",L),kick:$(".kick",L),kickI:$(".kick i",L),panel:$(".panel",L),uline:$(".uline",L),
+    ev:$(".event",L),total:$(".total",L),tv:$(".tv",L),fin:$(".final",L),sf:$(".spark-fill",L),sl:$(".spark-line",L),src:$(".src",L),ticks:[],cols:[],rows:[]};
+  const grid=$(".grid",L);for(let i=0;i<24;i++){const d=document.createElement("div");d.className="tick";d.innerHTML="<b></b>";grid.appendChild(d);o.ticks.push(d)}
+  const slots=$(".slots",L);for(let i=0;i<TOPN;i++){const s=document.createElement("div");s.className="slot";s.style.top=(TOP+i*SLOT)+"px";s.textContent=String(i+1).padStart(2,"0");slots.appendChild(s)}
+  const yearEl=$(".year",L);for(let c=0;c<4;c++){const col=document.createElement("div");col.className="col";const st=document.createElement("div");st.className="strip";for(let d=0;d<=10;d++){const e=document.createElement("div");e.textContent=d%10;st.appendChild(e)}col.appendChild(st);yearEl.appendChild(col);o.cols.push(st)}
+  const rowsEl=$(".rows",L);
+  BRANDS.forEach(b=>{const r=document.createElement("div");r.className="row";const c=b.color;
+    r.style.setProperty("--c",c);r.style.setProperty("--cl",mix(c,"#FFFFFF",.3));r.style.setProperty("--cd",mix(c,"#000000",.4));
+    r.style.setProperty("--c30",rgba(c,.3));r.style.setProperty("--c25",rgba(c,.25));r.style.setProperty("--c35",rgba(c,.38));
+    r.style.setProperty("--k1",mix("#F2F6F9",c,.44));r.style.setProperty("--k2",mix("#4A5560",c,.52));r.style.setProperty("--k3",mix("#B9C3CD",c,.46));
+    r.innerHTML=`<div class="name">${b.name}</div><div class="ring"></div><div class="bar"></div><div class="logo">${b.name[0]}</div><div class="val"></div><div class="chip">YENİ #1</div>`;
+    rowsEl.appendChild(r);o.rows.push({el:r,bar:$(".bar",r),ring:$(".ring",r),logo:$(".logo",r),val:$(".val",r),chip:$(".chip",r)})});
+  layers.push(o)});
+
+/* headline stack */
+const heads=[];[["hl0",0],["hl1",1],["hl2",2]].forEach(([cls,k])=>{
+  const h=document.createElement("div");h.className="hl "+cls;
+  const words=[["Kola",0],["savaşları",0],["1970–1999",1]];
+  h.innerHTML=(k===2?'<span class="in">':"")+words.map(([w,y])=>`<span class="w${y?" yr":""}"><span>${w}</span></span>`).join(" ")+(k===2?"</span>":"");
+  $("#heads").appendChild(h);heads.push({el:h,words:[...h.querySelectorAll(".w > span")],k})});
+
+/* ---------------- shared per-frame state ---------------- */
+const NS=12,DTS=0.03,WT=[];for(let k=0;k<NS;k++)WT.push(Math.pow(1-k/NS,2));const WS=WT.reduce((a,c)=>a+c,0);
+function ranks(t){const x=prog(t);const v=BRANDS.map((b,i)=>[val(b,x),b.id,i]);v.sort((a,c)=>c[0]-a[0]||(a[1]<c[1]?-1:1));const r=new Array(BRANDS.length);v.forEach((e,k)=>r[e[2]]=k);return{r,max:v[0][0],lead:v[0][2]}}
+function smoothRanks(t){const acc=new Array(BRANDS.length).fill(0);let mx=0;for(let k=0;k<NS;k++){const s=ranks(Math.max(0,t-k*DTS));s.r.forEach((r,i)=>acc[i]+=WT[k]*r);mx+=WT[k]*s.max}return{r:acc.map(a=>a/WS),max:mx/WS}}
+
+function setMask(el,e){const g=e==null?"none":`linear-gradient(90deg,#000 ${(e-FEATHER).toFixed(2)}px,transparent ${e.toFixed(2)}px)`;el.style.webkitMaskImage=g;el.style.maskImage=g}
+
+/* ---------------- draw one layer from the shared state ---------------- */
+function drawLayer(o,t,S,x,yf){
+  const k=o.k;
+  // kicker + panel entrance (layer 0: intro; later layers: when the wipe passes the panel)
+  const kIn=eo3(seg(t,.05,.45));o.kick.style.opacity=kIn;o.kick.style.transform=`translateY(${(1-kIn)*14}px)`;
+  o.kickI.style.transform=`scaleX(${eo3(seg(t,.15,.6))})`;
+  const pIn=eo3(seg(t,.9,1.5));o.panel.style.opacity=pIn;o.panel.style.transform=`translateY(${(1-pIn)*30}px)`;
+  const sp=k===0?eo3(seg(t,1.0,1.4)):eo3(seg(t,T_PANEL[k],T_PANEL[k]+.4));
+  o.stamp.style.opacity=sp;o.stamp.style.transform=`translateY(${(sp-1)*12}px)`;
+  o.uline.style.transform=`scaleX(${eo3(seg(t,1.0,1.7))})`;
+  // ticks
+  const gIn=eo3(seg(t,.5,1.1));
+  for(let i=0;i<o.ticks.length;i++){const d=o.ticks[i],T=S.ticks[i];if(!T){d.style.opacity=0;continue}d.style.left=T.px+"px";d.style.opacity=T.a*gIn;d.firstChild.style.opacity=T.la;d.firstChild.textContent=T.label}
+  // rows
+  S.rows.forEach((R,i)=>{const q=o.rows[i];
+    q.el.style.transform=`translateY(${TOP+R.r*SLOT}px)`;q.el.style.opacity=R.vis;
+    q.bar.style.width=R.w+"px";
+    q.logo.style.left=R.lx+"px";q.logo.style.opacity=R.lo;
+    q.val.style.left=R.vx+"px";q.val.innerHTML=R.vtxt;
+    q.chip.style.left=(BAR0+16)+"px";q.chip.style.opacity=R.chip;q.chip.style.transform=`scale(${.6+.4*R.chip})`;
+    q.ring.style.width=(Math.max(R.w,56)+8)+"px";q.ring.style.opacity=R.ring});
+  // year odometer
+  const yi=Math.floor(yf),fr=yf-yi,roll=x>=NY?0:smooth(seg(fr,.62,1));const dig=String(yi).split("").map(Number);
+  const pos=[dig[0]+(dig[1]===9&&dig[2]===9&&dig[3]===9?roll:0),dig[1]+(dig[2]===9&&dig[3]===9?roll:0),dig[2]+(dig[3]===9?roll:0),dig[3]+roll];
+  o.cols.forEach((c,i)=>c.style.transform=`translateY(${-pos[i]*132}px)`);
+  // event card
+  const ev=S.ev;if(ev){o.ev.classList.toggle("fz",!!ev.e.fz);
+    o.ev.querySelector(".stripe").style.background=ev.color;o.ev.querySelector(".ey").textContent=ev.e.ey||ev.e.y;o.ev.querySelector(".et").textContent=ev.e.tx}
+  o.ev.style.opacity=ev?ev.p:0;o.ev.style.transform=`translateX(${ev?(1-ev.p)*36:36}px)`;
+  // total + sparkline
+  o.tv.innerHTML=`${fmt(S.tot)}<small>M kasa</small>`;
+  o.sl.setAttribute("d",S.sd);o.sf.setAttribute("d",S.sdf);
+  o.total.style.opacity=1-S.outro;
+  // final card
+  o.fin.style.opacity=S.outro;o.fin.style.transform=`translateY(${(1-S.outro)*24}px)`;
+  if(S.outro>0){const fl=$(".fl",o.fin);fl.textContent="Son sıralama · "+(Y0+NY);$(".ft",o.fin).textContent=S.final.ft;$(".fs",o.fin).textContent=S.final.fs}
+}
+
+/* ---------------- draw(t): every visible property is a function of t ---------------- */
+function draw(t){
+  const x=prog(t), yf=Y0+x;
+  const S=smoothRanks(t);const maxScale=Math.max(40,S.max*1.1);
+  // camera: 1 % push during each handover, slow push through the outro
+  let push=0;HO.forEach(H=>{push+=Math.sin(Math.PI*seg(t,H.t0,H.t1))*.01});
+  const outroT=seg(t,INTRO+RACE,DUR);push+=.012*smooth(outroT);
+  $("#cam").style.transform=`scale(${1+push})`;
+
+  // ticks (shared list, cross-faded steps)
+  const target=maxScale/4;let kk=0;while(kk<LADDER.length-1&&LADDER[kk+1]<=target)kk++;const s1=LADDER[kk],s2=LADDER[Math.min(kk+1,LADDER.length-1)];
+  const wq=s2===s1?0:clamp((Math.log(target)-Math.log(s1))/(Math.log(s2)-Math.log(s1)));
+  const seen=new Map();[[s1,1-wq],[s2,wq]].forEach(([st,a])=>{for(let v=st;v<maxScale;v+=st){const key=Math.round(v*1000);seen.set(key,Math.max(seen.get(key)||0,a))}});
+  const ticks=[];for(const[key,a]of seen){if(ticks.length>=24)break;const v=key/1000,px=BAR0+v/maxScale*BARMAX,edge=clamp((BAR0+BARMAX-px)/80);
+    ticks.push({px,a:a*edge,la:clamp((a-.45)/.3),label:(v>=1000?(v/1000)+" Mr":v+" M")})}
+
+  // rows
+  const lead=ranks(t).lead;
+  const rows=BRANDS.map((b,i)=>{const r=S.r[i],v=val(b,x);
+    const grow=eo3(seg(t,.55+Math.min(r,8)*.06,.55+Math.min(r,8)*.06+.65));
+    const w=Math.max(0,v/maxScale*BARMAX*grow);const vis=clamp((TOPN-r)/.6)*clamp(v/3);
+    const lx=BAR0+Math.max(w,56)-50;
+    let chip=0;LEADS.forEach(L=>{if(L.i!==i)return;const p=seg(t,L.t,L.t+1.4);if(p>0&&p<1)chip=p<.15?back(p/.15):p>.78?1-eo3((p-.78)/.22):1});
+    const ring=clamp(1-r*1.6)*clamp((w-50)/70)*eo3(seg(t,1.0,1.5));
+    return{r,v,w,vis,lx,lo:clamp(w/40),vx:BAR0+Math.max(w,56)+16,vtxt:`${fmt(v*grow)}<small>M</small>`,chip:clamp(chip),ring}});
+
+  // event card
+  let ev=null;EVENTS.forEach(e=>{const t1=e.t0+e.dur;if(t>=e.t0&&t<t1){const p=t<e.t0+.45?eo3(seg(t,e.t0,e.t0+.45)):t>t1-.4?1-seg(t,t1-.4,t1):1;ev={e,p,color:BRANDS.find(q=>q.id===e.b).color}}});
+
+  // totals + sparkline
+  const tot=BRANDS.reduce((a,b)=>a+val(b,x),0);
+  let d="";const n=Math.floor(x);for(let i=0;i<=n;i++)d+=(i?"L":"M")+(i/NY*300).toFixed(1)+" "+(66-TOT[i]/TMAX*60).toFixed(1);
+  d+="L"+(x/NY*300).toFixed(1)+" "+(66-tot/TMAX*60).toFixed(1);
+  const sdf=d+`L${(x/NY*300).toFixed(1)} 70L0 70Z`;
+  const outro=eo3(seg(t,INTRO+RACE+.15,INTRO+RACE+.85));
+  const order=BRANDS.map(b=>[val(b,NY),b]).sort((a,c)=>c[0]-a[0]);
+  const final={ft:`${order[0][1].name} ${fmt(order[0][0])} M ile önde`,fs:`${order[1][1].name} ikinci, ${order[2][1].name} üçüncü. Otuz yılda ${LEADS.length+1} farklı lider.`};
+  const ST={ticks,rows,ev,tot,sd:d,sdf,outro,final};
+
+  // which layers are on screen
+  const full=[true,...HO.map(H=>t>=H.t1)];
+  layers.forEach((o,k)=>{
+    let vis=true,e=null;
+    if(k>0){const H=HO[k-1];if(t<=H.t0)vis=false;else if(t<H.t1)e=edgeAt(k,t)}
+    const covered=k<layers.length-1&&full[k+1];
+    if(covered)vis=false;
+    o.el.style.visibility=vis?"visible":"hidden";
+    if(vis){setMask(o.el,e);drawLayer(o,t,ST,x,yf)}});
+
+  // headline cross-fade (0.6 s inside the wipe window), words rise on layer 0 only
+  heads.forEach((h,k)=>{
+    let op=1;if(k>0){const H=HO[k-1];op=smooth(seg(t,H.tb-.12,H.tb+.3))}
+    if(k<heads.length-1)op*=1-smooth(seg(t,HO[k].tb-.3,HO[k].tb+.12));
+    const covered=k<heads.length-1&&t>=HO[k].tb+.12;
+    h.el.style.opacity=covered?0:op;h.el.style.visibility=(k>0&&t<HO[k-1].tb-.12)||covered?"hidden":"visible";
+    h.words.forEach((w,i)=>{const p=k===0?seg(t,.22+i*.075,.22+i*.075+.55):1;w.style.transform=`translateY(${(1-back(p))*105}%)`})});
+
+  // wipe edge decoration
+  let edgeX=null;HO.forEach((H,i)=>{if(t>H.t0&&t<H.t1)edgeX=edgeAt(i+1,t)});
+  const E=$("#edge");E.style.opacity=edgeX==null?0:1;E.style.left=(edgeX==null?-400:edgeX-FEATHER)+"px";
+}
+
+/* ---------------- HyperFrames contract: one paused timeline ---------------- */
+const proxy={t:0};
+const tl=gsap.timeline({paused:true});
+tl.to(proxy,{t:DUR,duration:DUR,ease:"none",onUpdate:()=>draw(proxy.t)},0);
+window.__timelines=window.__timelines||{};window.__timelines.main=tl;
+window.DUR=DUR;
+window.__seek=t=>{tl.seek(t,false);proxy.t=t;draw(t)};
+const FACES=['500 20px "Inter"','700 20px "Inter"','800 20px "Inter"','400 20px "Instrument Serif"','500 20px "JetBrains Mono"','700 20px "JetBrains Mono"'];
+Promise.all(FACES.map(f=>document.fonts.load(f,"ŞşİıĞğÇçÖöÜü 0123456789 Kola savaşları"))).then(()=>document.fonts.ready).then(()=>{draw(0);window.READY=true});
+})();
+</script>
+</body>
+</html>

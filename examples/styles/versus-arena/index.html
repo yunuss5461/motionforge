@@ -1,0 +1,403 @@
+<!doctype html>
+<!--
+  motionforge style preview: versus-arena (16:9, 12 s, 30 fps)
+  © 2026 motionforge contributors, MIT
+
+  Two brands face off across a diagonal split. This excerpt runs the arena open (split line draws,
+  halves fill from the outer edges, names slam in, VS medallion pops), three rounds and the verdict:
+    round 1  Menzil        Zipra wins  (the winner's tip crosses the line by 24 px)
+    round 2  Azami hiz     a DRAW      (within 2 %: both tips just touch the line, meter does not move)
+    round 3  Yillik satis  Zipra wins
+  then both halves wipe toward the loser so the winner's colour holds 70 % of the frame, and the
+  final score lands with a 1.5 % camera push.
+
+  How it stays seek-pure: every visible property is a function of t. Round state, tug-of-war meter,
+  score, row positions, clash flash and shock ring are all computed from the ROUNDS table and t, with
+  no previous-frame state, no wall clock and no Math.random (grain is a seeded generator, drawn once).
+  The tilted centre line, halves, medallion and the clash flash live on their own unscaled SVG layers
+  (#bg below the stage, #fx above it); only the text stage takes the verdict push, so the anti-aliased
+  slanted edges never sit under a scaling parent or change raster with the bars growing beneath them.
+  No will-change anywhere.
+
+  Excerpt note: STYLE.md asks for 4 to 7 s per round and 4 to 8 rounds; this 12 s preview holds each
+  round for about 2.5 s and shows three. The row slides 112 px (not 96) so the 34 px metric name fits
+  between stacked rows, and the 96 px logo roundels sit beside the names, not above them (the header
+  band is only 120 px tall).
+
+  Fonts: only the bundled families. Stand-in for the STYLE.md display face: Big Shoulders Display ->
+  Inter 800 uppercase (names, VS, score). Metric names and values stay Inter, labels JetBrains Mono.
+  Copy is Turkish on purpose (ş ğ ı İ Ç Ü Ö); latin and latin-ext faces are both declared.
+  Brands, numbers and metrics are fictional sample data (örnek veri).
+-->
+<html lang="tr" data-resolution="landscape">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<script src="assets/vendor/gsap.min.js"></script>
+<style>
+@font-face{font-family:"Inter";font-weight:500;src:url(assets/fonts/inter-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:500;src:url(assets/fonts/inter-latin-ext-500-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Inter";font-weight:700;src:url(assets/fonts/inter-latin-700-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:700;src:url(assets/fonts/inter-latin-ext-700-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"Inter";font-weight:800;src:url(assets/fonts/inter-latin-800-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"Inter";font-weight:800;src:url(assets/fonts/inter-latin-ext-800-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+@font-face{font-family:"JetBrains Mono";font-weight:500;src:url(assets/fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+20BA,U+2122,U+2190-2193,U+2212}
+@font-face{font-family:"JetBrains Mono";font-weight:500;src:url(assets/fonts/jetbrains-mono-latin-ext-500-normal.woff2) format("woff2");unicode-range:U+0100-0130,U+0132-0151,U+0154-024F,U+1E00-1EFF}
+:root{--bg:#0B0C10;--ink:#FFFFFF;--accent:#F4F1E8;--sup:#30333C;--sup2:#A3A7B1;--cl:#E14B4B;--cr:#3E7BF0;
+  --f-body:"Inter",sans-serif;--f-mono:"JetBrains Mono",monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;background:var(--bg);overflow:hidden}
+#root{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--bg);font-family:var(--f-body);color:var(--ink);font-feature-settings:"tnum" 1,"lnum" 1}
+#bg,#fx{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none}
+#stage,#stage2{position:absolute;inset:0;transform-origin:960px 540px}
+#stage2{pointer-events:none}
+.lrow{position:absolute;left:0;top:0;width:1920px;height:64px}
+#grain{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;opacity:.03;mix-blend-mode:overlay}
+
+/* contender headers */
+.hdr{position:absolute;left:0;top:0;width:1920px;height:260px}
+.logo{position:absolute;top:102px;width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 46px/1 var(--f-body);color:#fff;box-shadow:0 0 0 3px rgba(11,12,16,.6),0 0 0 5px rgba(255,255,255,.18)}
+.nm{position:absolute;top:90px;height:120px;font:800 120px/120px var(--f-body);letter-spacing:.01em;white-space:nowrap}
+.sub{position:absolute;top:218px;font:500 16px/1 var(--f-mono);letter-spacing:.14em;color:var(--sup2);white-space:nowrap}
+
+/* round rows */
+.row{position:absolute;left:0;top:0;width:1920px;height:64px}
+.rname{position:absolute;top:-50px;left:0;padding:4px 18px 6px;border-radius:9px;background:#0B0C10;text-align:center;font:700 34px/34px var(--f-body);white-space:nowrap}
+.bar{position:absolute;top:0;height:64px;overflow:hidden}
+.bar.l{left:0;border-radius:0 12px 12px 0;border-right:2px solid #fff}
+.bar.r{right:0;border-radius:12px 0 0 12px;border-left:2px solid #fff}
+.bar .sheen{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 50%,rgba(0,0,0,.14))}
+.bar .streak{position:absolute;top:0;bottom:0;width:260px}
+.bar.l .streak{right:0;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.62))}
+.bar.r .streak{left:0;background:linear-gradient(270deg,rgba(255,255,255,0),rgba(255,255,255,.62))}
+.bar .sweep{position:absolute;top:-20px;bottom:-20px;width:150px;background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-18deg)}
+.val{position:absolute;top:0;height:64px;font:800 54px/64px var(--f-body);white-space:nowrap}
+.val.l{left:120px}.val.r{right:120px;text-align:right}
+.val small{font:500 22px/1 var(--f-body);color:rgba(255,255,255,.78);margin-left:8px}
+.rtag{position:absolute;top:84px;left:0;margin-left:-160px;width:320px;text-align:center;font:500 16px/1 var(--f-mono);letter-spacing:.14em;white-space:nowrap}
+.rtag b{display:inline-block;padding:9px 16px;border-radius:999px;border:1.5px solid currentColor;font-weight:500;background:#0B0C10}
+
+/* tug-of-war meter */
+#meter{position:absolute;left:360px;top:900px;width:1200px;height:40px}
+.cell{position:absolute;top:0;width:92px;height:40px;border-radius:5px;background:var(--sup);overflow:hidden}
+.cell i{position:absolute;inset:0}
+#mk{position:absolute;top:884px;width:6px;height:72px;margin-left:-3px;background:#fff;border-radius:2px}
+#mkt{position:absolute;top:866px;width:0;height:0;margin-left:-11px;border-left:11px solid transparent;border-right:11px solid transparent;border-top:15px solid #fff}
+.wn{position:absolute;top:884px;height:72px;width:160px;font:800 54px/72px var(--f-body)}
+#wnl{left:170px;text-align:right}#wnr{left:1590px;text-align:left}
+#rcount{position:absolute;left:660px;top:978px;width:600px;text-align:center;font:500 16px/1 var(--f-mono);letter-spacing:.14em;color:var(--sup2)}
+#source{position:absolute;left:96px;top:1030px;width:760px;text-align:left;font:500 15px/1 var(--f-mono);letter-spacing:.14em;color:#6A6E79}
+
+/* verdict */
+#verdict{position:absolute;left:0;top:0;width:1920px;height:1080px}
+#vlab{position:absolute;top:322px;width:900px;margin-left:-450px;text-align:center;font:500 18px/1 var(--f-mono);letter-spacing:.2em;color:var(--accent)}
+#vscore{position:absolute;top:360px;width:900px;margin-left:-450px;height:230px;display:flex;justify-content:center;align-items:center;font:800 220px/230px var(--f-body);letter-spacing:.02em;text-transform:uppercase}
+#vscore span{display:inline-block;min-width:130px;text-align:center}
+#vscore .col{min-width:70px;color:var(--accent)}
+#vline{position:absolute;top:620px;width:1100px;margin-left:-550px;text-align:center;font:700 44px/1.2 var(--f-body)}
+#vsub{position:absolute;top:690px;width:1100px;margin-left:-550px;text-align:center;font:500 24px/1.3 var(--f-body);color:rgba(255,255,255,.72)}
+</style>
+</head>
+<body>
+<div id="root" class="clip" data-composition-id="main" data-start="0" data-duration="12" data-width="1920" data-height="1080" data-track-index="0">
+  <svg id="bg" width="1920" height="1080" viewBox="0 0 1920 1080">
+    <defs>
+      <linearGradient id="gL" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1100" y2="0"><stop offset="0" stop-color="#E14B4B" stop-opacity=".06"/><stop offset="1" stop-color="#E14B4B" stop-opacity=".18"/></linearGradient>
+      <linearGradient id="gR" gradientUnits="userSpaceOnUse" x1="1920" y1="0" x2="820" y2="0"><stop offset="0" stop-color="#3E7BF0" stop-opacity=".06"/><stop offset="1" stop-color="#3E7BF0" stop-opacity=".18"/></linearGradient>
+      <pattern id="hatch" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="14" stroke="#FFFFFF" stroke-opacity=".06" stroke-width="1"/></pattern>
+      <clipPath id="cL"><rect id="cLr" x="0" y="0" width="0" height="1080"/></clipPath>
+      <clipPath id="cR"><rect id="cRr" x="1920" y="0" width="0" height="1080"/></clipPath>
+    </defs>
+    <g clip-path="url(#cL)"><polygon id="pL" fill="url(#gL)"/><polygon id="pLw" fill="#E14B4B" fill-opacity="0"/><polygon id="pLh" fill="url(#hatch)"/></g>
+    <g clip-path="url(#cR)"><polygon id="pR" fill="url(#gR)"/><polygon id="pRw" fill="#3E7BF0" fill-opacity="0"/><polygon id="pRh" fill="url(#hatch)"/></g>
+    <line id="lnglow" stroke="#F4F1E8" stroke-opacity=".10" stroke-width="16"/>
+    <line id="ln" stroke="#F4F1E8" stroke-width="3"/>
+    <g id="med"><circle id="medring" r="74" fill="none" stroke="#F4F1E8" stroke-opacity=".45" stroke-width="2" stroke-dasharray="7 11"/><circle r="60" fill="#0B0C10" stroke="#F4F1E8" stroke-width="2"/><text y="23" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="64" fill="#FFFFFF" letter-spacing="1">VS</text></g>
+  </svg>
+
+  <div id="stage">
+    <div class="hdr" id="hL"><div class="logo" style="left:120px;background:#8E2D2D">Z</div><div class="nm" style="left:240px;color:#fff">ZIPRA</div><div class="sub" id="subL" style="left:244px">ELEKTRİKLİ SKÜTER</div></div>
+    <div class="hdr" id="hR"><div class="logo" style="left:1704px;background:#264C96">B</div><div class="nm" style="left:1000px;width:680px;text-align:right;color:#fff">BOLTO</div><div class="sub" id="subR" style="left:1000px;width:676px;text-align:right">ELEKTRİKLİ SKÜTER</div></div>
+    <div id="rows"></div>
+    <div id="meter"></div>
+    <div id="mkt"></div><div id="mk"></div>
+    <div class="wn" id="wnl">0</div><div class="wn" id="wnr">0</div>
+    <div id="rcount"></div>
+    <div id="source">KAYNAK: ÖRNEK VERİ · KURGUSAL MARKALAR · MOTIONFORGE STİL ÖNİZLEMESİ</div>
+    <div id="verdict">
+      <div id="vlab">FİNAL SKOR</div>
+      <div id="vscore"><span id="sL">0</span><span class="col">:</span><span id="sR">0</span></div>
+      <div id="vline"></div>
+      <div id="vsub"></div>
+    </div>
+  </div>
+
+  <svg id="fx" width="1920" height="1080" viewBox="0 0 1920 1080">
+    <line id="fl2" stroke="#fff" stroke-opacity="0" stroke-width="3"/>
+    <line id="fl" stroke="#fff" stroke-opacity="0" stroke-width="3"/>
+    <circle id="shock" r="10" fill="none" stroke="#fff" stroke-opacity="0" stroke-width="3"/>
+    <rect id="frame" x="28" y="28" width="1864" height="1024" rx="4" fill="none" stroke="#F4F1E8" stroke-width="2" stroke-opacity="0"/>
+  </svg>
+  <div id="stage2"><div id="labels"></div></div>
+  <canvas id="grain" width="512" height="512" style="width:1920px;height:1080px"></canvas>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ---------------- constants ---------------- */
+const DUR=12, W=1920, H=1080;
+const TAN=Math.tan(8*Math.PI/180);            // split line leans 8 degrees from vertical
+const ACT=520, PITCH=112, RH=64, CROSS=24, YC=ACT+RH/2;
+const CL="#E14B4B", CR="#3E7BF0", ACC="#F4F1E8";
+const NAMEL="Zipra", NAMER="Bolto";
+const VERDICT=8.9;                              // halves start to wipe
+
+/* ---------------- fictional rounds (örnek veri) ---------------- */
+const ROUNDS=[
+ {name:"Menzil",       unit:"km",       L:82,   R:61,   dec:0, rise:1.45, bar:1.70, slides:[3.7,6.9]},
+ {name:"Azami hız",    unit:"km/sa",    L:25.0, R:24.8, dec:1, rise:4.05, bar:4.30, slides:[6.9]},
+ {name:"Yıllık satış", unit:"bin adet", L:412,  R:268,  dec:0, rise:7.15, bar:7.45, slides:[]}];
+const SHOOT=.5;
+
+/* ---------------- helpers ---------------- */
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const seg=(t,a,b)=>clamp((t-a)/(b-a));
+const eo3=x=>1-Math.pow(1-x,3), eo4=x=>1-Math.pow(1-x,4), eio=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const backC=c=>x=>1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2);
+const back2=backC(2), back18=backC(1.8), back17=backC(1.7);
+const rng=seed=>{let x=seed>>>0||0x9e3779b9;return()=>{x^=x<<13;x>>>=0;x^=x>>>17;x^=x<<5;x>>>=0;return x/4294967296}};
+const f2=n=>(Math.round(n*100)/100).toString();
+const fmt=(v,d)=>v.toFixed(d).replace(".",",");
+const mix=(a,b,k)=>{const p=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));const A=p(a),B=p(b);return `rgb(${A.map((c,i)=>Math.round(c+(B[i]-c)*k)).join(",")})`};
+
+/* split line: x at height y, plus the verdict shift */
+const lineX0=y=>960-(y-540)*TAN;
+
+/* rounds: winner, draw rule (within 2 %), final tip offsets from the line, clash time */
+let winsL=0, winsR=0, draws=0;
+ROUNDS.forEach((r,i)=>{
+  const hi=Math.max(r.L,r.R);
+  r.draw=Math.abs(r.L-r.R)/hi<=.02;
+  r.win=r.draw?0:(r.L>r.R?-1:1);                // -1 left, +1 right, 0 draw
+  const x0=lineX0(YC);
+  if(r.draw){r.oL=0;r.oR=0;winsL+=0;draws++}
+  else if(r.win<0){const lenL=x0+CROSS,k=lenL/r.L;r.oL=CROSS;r.oR=(W-k*r.R)-x0;winsL++}
+  else{const lenR=(W-x0)+CROSS,k=lenR/r.R;r.oR=-CROSS;r.oL=k*r.L-x0;winsR++}
+  // clash moment: when the longer bar's length reaches the line (bars are power4.out)
+  const ratio=r.draw?1:(r.win<0?x0/(x0+CROSS):(W-x0)/((W-x0)+CROSS));
+  const pc=ratio>=1?1:1-Math.pow(1-ratio,.25);
+  r.tc=r.bar+SHOOT*pc;
+  r.tm=r.tc+.05;                                // meter shift
+  r.color=r.win<0?CL:CR;
+});
+const WINSIDE=winsL>winsR?-1:1;                 // -1: left side wins the match
+const SHIFT=WINSIDE<0?384:-384;                 // line travels toward the loser: winner holds 70 %
+const WINCOL=WINSIDE<0?CL:CR, WINNAME=WINSIDE<0?NAMEL:NAMER, LOSENAME=WINSIDE<0?NAMER:NAMEL;
+const shift=t=>SHIFT*eio(seg(t,VERDICT,VERDICT+.8));
+const lineX=(y,t)=>lineX0(y)+shift(t);
+
+/* ---------------- DOM ---------------- */
+const $=s=>document.querySelector(s);
+const rowEls=ROUNDS.map(r=>{
+  const e=document.createElement("div");e.className="row";
+  e.innerHTML=`<div class="bar l" style="background:${CL}"><div class="sheen"></div><div class="streak"></div><div class="sweep"></div></div>
+    <div class="bar r" style="background:${CR}"><div class="sheen"></div><div class="streak"></div><div class="sweep"></div></div>
+    <div class="val l"></div><div class="val r"></div>`;
+  $("#rows").appendChild(e);
+  // labels live on their own layer above the clash flash (#fx), so no flash, ring or split line crosses text
+  const lab=document.createElement("div");lab.className="lrow";
+  lab.innerHTML=`<div class="rname">${r.name}</div><div class="rtag"></div>`;
+  $("#labels").appendChild(lab);
+  return{el:e,lab:lab,name:lab.querySelector(".rname"),bl:e.querySelector(".bar.l"),br:e.querySelector(".bar.r"),
+    sl:e.querySelector(".bar.l .streak"),sr:e.querySelector(".bar.r .streak"),
+    wl:e.querySelector(".bar.l .sweep"),wr:e.querySelector(".bar.r .sweep"),
+    vl:e.querySelector(".val.l"),vr:e.querySelector(".val.r"),tag:lab.querySelector(".rtag")};
+});
+const cells=[];
+for(let k=0;k<12;k++){const c=document.createElement("div");c.className="cell";c.style.left=(k*100)+"px";c.innerHTML="<i></i>";$("#meter").appendChild(c);cells.push({el:c,i:c.firstChild,side:k<6?-1:1,dist:k<6?5-k:k-6})}
+
+{const c=$("#grain"),g=c.getContext("2d"),im=g.createImageData(512,512),r=rng(11);for(let i=0;i<im.data.length;i+=4){const v=r()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}g.putImageData(im,0,0)}
+
+/* ---------------- draw(t): every visible property is a function of t ---------------- */
+function draw(t){
+  const SH=shift(t);
+  /* ---- arena geometry (unscaled #bg) ---- */
+  const lp=eo3(seg(t,0,.5)), ly=H*lp;
+  const x0=lineX(0,t), x1=lineX(H,t);
+  const L=$("#ln"),LG=$("#lnglow");
+  [L,LG].forEach(e=>{e.setAttribute("x1",f2(x0));e.setAttribute("y1","0");e.setAttribute("x2",f2(lineX(ly,t)));e.setAttribute("y2",f2(ly))});
+  const ptsL=`-40,-10 ${f2(lineX0(-10)+SH)},-10 ${f2(lineX0(H+10)+SH)},${H+10} -40,${H+10}`;
+  const ptsR=`${W+40},-10 ${f2(lineX0(-10)+SH)},-10 ${f2(lineX0(H+10)+SH)},${H+10} ${W+40},${H+10}`;
+  ["pL","pLw","pLh"].forEach(id=>$("#"+id).setAttribute("points",ptsL));
+  ["pR","pRw","pRh"].forEach(id=>$("#"+id).setAttribute("points",ptsR));
+  const fill=eo3(seg(t,.2,.8));
+  $("#cLr").setAttribute("width",f2(W*fill));
+  $("#cRr").setAttribute("x",f2(W-W*fill));$("#cRr").setAttribute("width",f2(W*fill));
+  const wipe=eio(seg(t,VERDICT,VERDICT+.8));
+  $("#pLw").setAttribute("fill-opacity",f2(WINSIDE<0?.5*wipe:0));
+  $("#pRw").setAttribute("fill-opacity",f2(WINSIDE>0?.5*wipe:0));
+  // diagonal hatching drifts slowly (pattern offset is a pure function of t)
+  $("#hatch").setAttribute("patternTransform",`rotate(45) translate(${f2(t*9)} 0)`);
+  // medallion rides the line
+  const ms=back18(seg(t,.9,1.4))*(1-eio(seg(t,VERDICT,VERDICT+.55)));
+  $("#med").setAttribute("transform",`translate(${f2(lineX(150,t))} 150) scale(${f2(ms<.03?0:ms)})`);
+  $("#medring").setAttribute("stroke-dashoffset",f2(-t*34));
+
+  /* ---- header slam ---- */
+  const lose=eio(seg(t,VERDICT,VERDICT+.7));
+  const hl=back2(seg(t,.35,.75)), hr=back2(seg(t,.45,.85));
+  const hlo=clamp(seg(t,.35,.55)), hro=clamp(seg(t,.45,.65));
+  const lSide=WINSIDE>0?lose:0, rSide=WINSIDE<0?lose:0;           // loser slides out
+  $("#hL").style.transform=`translateX(${f2(-80*(1-hl)-300*lSide)}px)`;
+  $("#hL").style.opacity=f2(hlo*(1-.75*lSide));
+  $("#hR").style.transform=`translateX(${f2(80*(1-hr)+300*rSide)}px)`;
+  $("#hR").style.opacity=f2(hro*(1-.75*rSide));
+  const crown=eo3(seg(t,VERDICT+.6,VERDICT+1.1));
+  const wsub=$(WINSIDE<0?"#subL":"#subR");
+  wsub.textContent=crown>.5?"KARŞILAŞMANIN GALİBİ":"ELEKTRİKLİ SKÜTER";
+  wsub.style.color=crown>.5?ACC:"";
+
+  /* ---- rows ---- */
+  let activeIdx=-1;
+  ROUNDS.forEach((r,i)=>{
+    const R=rowEls[i];
+    const lvl=r.slides.reduce((a,s)=>a+eio(seg(t,s,s+.4)),0);
+    const y=ACT-PITCH*lvl, yc=y+RH/2;
+    const rp=eo3(seg(t,r.rise,r.rise+.3));
+    const rowFade=1-.6*Math.min(lvl,1);
+    const gone=1-eio(seg(t,VERDICT,VERDICT+.45));
+    R.el.style.transform=`translateY(${f2(y)}px)`;
+    R.el.style.opacity=f2(rowFade*gone*(rp>0?1:0));
+    R.lab.style.transform=`translateY(${f2(y)}px)`;
+    R.lab.style.opacity=f2(gone*(rp>0?1:0));
+    R.name.style.color=`rgba(255,255,255,${f2(rowFade)})`;      // chip stays opaque, only its text dims
+    if(t>=r.rise&&t<VERDICT)activeIdx=i;
+    const lx=lineX(yc,t);
+    R.name.style.left=f2(lx)+"px";
+    R.name.style.opacity=f2(rp);
+    R.name.style.transform=`translate(-50%,${f2((1-rp)*20)}px)`;
+    const pl=seg(t,r.bar,r.bar+SHOOT), p=eo4(pl);
+    const lenL=Math.max(0,p*(lx+r.oL)), lenR=Math.max(0,p*(W-(lx+r.oR)));
+    R.bl.style.width=f2(lenL)+"px";R.br.style.width=f2(lenR)+"px";
+    R.bl.style.opacity=f2(clamp(lenL/8));R.br.style.opacity=f2(clamp(lenR/8));
+    // motion streak while the bars fly (speed ~ (1-pl)^3), sweep after the clash
+    const sp=pl>0&&pl<1?Math.pow(1-pl,3):0;
+    R.sl.style.opacity=f2(sp);R.sr.style.opacity=f2(sp);
+    const sw=seg(t,r.tc+.05,r.tc+.75);
+    const sweepOn=sw>0&&sw<1&&!r.draw;
+    R.wl.style.opacity=(sweepOn&&r.win<0)?"1":"0";R.wr.style.opacity=(sweepOn&&r.win>0)?"1":"0";
+    R.wl.style.left=f2(-160+eio(sw)*(lenL+300))+"px";R.wr.style.left=f2(-160+eio(sw)*(lenR+300))+"px";
+    // values count up with the bars; the winner's value pulses at the clash
+    const vo=clamp(seg(t,r.bar,r.bar+.15));
+    const pulse=r.draw?0:Math.sin(Math.PI*seg(t,r.tc,r.tc+.4));
+    R.vl.style.opacity=f2(vo);R.vr.style.opacity=f2(vo);
+    R.vl.innerHTML=`${fmt(r.L*p,r.dec)}<small>${r.unit}</small>`;
+    R.vr.innerHTML=`${fmt(r.R*p,r.dec)}<small>${r.unit}</small>`;
+    R.vl.style.transformOrigin="left center";R.vr.style.transformOrigin="right center";
+    R.vl.style.transform=`scale(${f2(1+(r.win<0?.14:0)*pulse)})`;
+    R.vr.style.transform=`scale(${f2(1+(r.win>0?.14:0)*pulse)})`;
+    // result tag under the line
+    const tg=eo3(seg(t,r.tc+.12,r.tc+.5));
+    R.tag.style.left=f2(lx)+"px";
+    // keep the pill opaque while it dims, so the split line never shows through it
+    R.tag.style.opacity=f2(lvl>=1?0:tg);
+    R.tag.style.filter=lvl>0&&lvl<1?`brightness(${f2(1-.75*lvl)})`:"none";
+    R.tag.style.transform=`translateY(${f2((1-tg)*10)}px)`;
+    R.tag.innerHTML=r.draw?`<b style="color:${"#A3A7B1"}">BERABERE · FARK &lt; %2</b>`:`<b style="color:${r.color}">${(r.win<0?NAMEL:NAMER).toUpperCase()} +1</b>`;
+  });
+
+  /* ---- clash flash, shock ring (unscaled #fx) ---- */
+  let fa=0,fcol=ACC,fw=3,sr=0,sa=0,scol=ACC,smax=190;
+  ROUNDS.forEach(r=>{
+    const a=t>=r.tc&&t<r.tc+.25?1-seg(t,r.tc,r.tc+.25):0;
+    const k=r.draw?.6:1;
+    if(a*k>fa){fa=a*k;fcol=r.draw?ACC:r.color;fw=3+11*a*k}
+    const sp=seg(t,r.tc,r.tc+.6);
+    if(sp>0&&sp<1&&(1-sp)>sa){sa=(1-sp)*(r.draw?.55:.9);sr=26+(r.draw?130:200)*eo3(sp);scol=r.draw?ACC:r.color}
+  });
+  const FL=$("#fl");
+  // flash line is split in two so it never crosses the VS medal (no SVG mask: masks broke seek purity)
+  const mr=64*back18(seg(t,.9,1.4))*(1-eio(seg(t,VERDICT,VERDICT+.55))), FL2=$("#fl2");
+  FL.setAttribute("x1",f2(lineX(150+mr,t)));FL.setAttribute("y1",f2(150+mr));FL.setAttribute("x2",f2(lineX(H,t)));FL.setAttribute("y2",String(H));
+  FL2.setAttribute("x1",f2(lineX(0,t)));FL2.setAttribute("y1","0");FL2.setAttribute("x2",f2(lineX(Math.max(0,150-mr),t)));FL2.setAttribute("y2",f2(Math.max(0,150-mr)));
+  [FL,FL2].forEach(e=>{e.setAttribute("stroke",fcol);e.setAttribute("stroke-width",f2(fw));e.setAttribute("stroke-opacity",f2(fa))});
+  const SK=$("#shock");SK.setAttribute("cx",f2(lineX(YC,t)));SK.setAttribute("cy",String(YC));SK.setAttribute("r",f2(Math.max(sr,1)));
+  SK.setAttribute("stroke",scol);SK.setAttribute("stroke-opacity",f2(sa));SK.setAttribute("stroke-width",f2(1.5+4*sa));
+  // verdict frame draws around the picture
+  const fp=eio(seg(t,9.45,10.45)), PER=5769;
+  const FR=$("#frame");FR.setAttribute("stroke-dasharray",f2(PER));FR.setAttribute("stroke-dashoffset",f2(PER*(1-fp)));
+  FR.setAttribute("stroke-opacity",f2(.5*clamp(fp*6)));
+
+  /* ---- tug-of-war meter ---- */
+  let wl=0,wr=0,cl=0,cr=0;
+  ROUNDS.forEach(r=>{if(r.draw)return;const e=back17(seg(t,r.tm,r.tm+.35));const done=seg(t,r.tm,r.tm+.35)>=.5?1:0;
+    if(r.win<0){wl+=e;cl+=done}else{wr+=e;cr+=done}});
+  const mIn=eo3(seg(t,.7,1.3));
+  cells.forEach(c=>{
+    const a=eo3(seg(t,.8+.05*c.dist,1.1+.05*c.dist));
+    c.el.style.opacity=f2(a);c.el.style.transform=`scaleY(${f2(.4+.6*a)})`;
+    const lit=clamp((c.side<0?wl:wr)-c.dist);
+    c.i.style.background=c.side<0?CL:CR;c.i.style.opacity=f2(lit);
+  });
+  const mx=960+100*(wr-wl);
+  $("#mk").style.left=f2(mx)+"px";$("#mkt").style.left=f2(mx)+"px";
+  $("#mk").style.opacity=f2(mIn);$("#mkt").style.opacity=f2(mIn);
+  const lastTm=k=>ROUNDS.reduce((a,r)=>(r.win===k&&t>=r.tm)?r.tm:a,-9);
+  const popL=Math.sin(Math.PI*seg(t,lastTm(-1),lastTm(-1)+.45)), popR=Math.sin(Math.PI*seg(t,lastTm(1),lastTm(1)+.45));
+  const WL=$("#wnl"),WR=$("#wnr");
+  WL.textContent=cl;WR.textContent=cr;
+  WL.style.opacity=f2(mIn);WR.style.opacity=f2(mIn);
+  WL.style.color=cl>0?CL:"#6A6E79";WR.style.color=cr>0?CR:"#6A6E79";
+  WL.style.transformOrigin="right center";WR.style.transformOrigin="left center";
+  WL.style.transform=`scale(${f2(1+.4*popL)})`;WR.style.transform=`scale(${f2(1+.4*popR)})`;
+
+  /* ---- counter, source ---- */
+  const rc=$("#rcount");
+  const fin=t>=VERDICT;
+  rc.textContent=fin?"FİNAL":(activeIdx<0?"":`TUR ${activeIdx+1} / ${ROUNDS.length}`);
+  rc.style.opacity=f2(eo3(seg(t,.9,1.4)));
+  rc.style.color=fin?ACC:"";
+  $("#source").style.opacity=f2(eo3(seg(t,1,1.6)));
+
+  /* ---- verdict ---- */
+  const vcx=WINSIDE<0?(960+SHIFT)/2:(960+SHIFT+W)/2;   // centre of the winner's 70 %
+  ["#vlab","#vscore","#vline","#vsub"].forEach(s=>$(s).style.left=f2(vcx)+"px");
+  const labA=eo3(seg(t,9.45,9.85));
+  $("#vlab").style.opacity=f2(labA);$("#vlab").style.transform=`translateY(${f2((1-labA)*14)}px)`;
+  const scA=seg(t,9.7,10.2), scE=back17(scA);
+  const VS=$("#vscore");
+  VS.style.opacity=f2(clamp(scA*3));VS.style.transform=`scale(${f2(1.45-.45*scE)})`;
+  const n=k=>ROUNDS.filter(r=>r.win===k).length;
+  const t1=9.9,dt=.3;
+  const sc=cnt=>{let c=0;for(let j=0;j<cnt;j++)if(t>=t1+dt*j)c=j+1;return c};
+  const aL=sc(n(-1)),aR=sc(n(1));
+  const popOf=(cnt)=>{let p=0;for(let j=0;j<cnt;j++){const s=seg(t,t1+dt*j,t1+dt*j+.4);if(s>0&&s<1)p=Math.max(p,1-s)}return p};
+  $("#sL").textContent=aL;$("#sR").textContent=aR;
+  $("#sL").style.transform=`scale(${f2(1+.28*popOf(n(-1)))})`;$("#sR").style.transform=`scale(${f2(1+.28*popOf(n(1)))})`;
+  $("#sL").style.color=WINSIDE<0?"#fff":"rgba(255,255,255,.55)";$("#sR").style.color=WINSIDE>0?"#fff":"rgba(255,255,255,.55)";
+  VS.style.textShadow=`0 0 ${f2(50+14*Math.sin(t*5))}px ${mix(WINCOL,"#FFFFFF",.1)}`;
+  const vl=eo3(seg(t,10.4,10.85));
+  $("#vline").style.opacity=f2(vl);$("#vline").style.transform=`translateY(${f2((1-vl)*24)}px)`;
+  $("#vline").textContent=`${WINNAME.toUpperCase()} ${n(WINSIDE)}-${n(-WINSIDE)} ile önde bitirdi`;
+  const vs2=eo3(seg(t,10.7,11.15));
+  $("#vsub").style.opacity=f2(vs2);$("#vsub").style.transform=`translateY(${f2((1-vs2)*18)}px)`;
+  $("#vsub").textContent=`${draws} tur berabere. ${LOSENAME} bu karşılaşmada tur alamadı. Veriler örnek niteliğindedir.`;
+
+  /* ---- camera: a 1.5 % push on the verdict (text stage only) ---- */
+  const push=.015*eo3(seg(t,VERDICT,DUR));
+  $("#stage").style.transform=$("#stage2").style.transform=`scale(${f2(1+push)})`;
+}
+
+/* ---------------- HyperFrames contract: one paused timeline ---------------- */
+const proxy={t:0};
+const tl=gsap.timeline({paused:true});
+tl.to(proxy,{t:DUR,duration:DUR,ease:"none",onUpdate:()=>draw(proxy.t)},0);
+window.__timelines=window.__timelines||{};window.__timelines.main=tl;
+window.DUR=DUR;
+window.__seek=t=>{tl.seek(t,false);proxy.t=t;draw(t)};
+document.fonts.ready.then(()=>{draw(0);window.READY=true});
+})();
+</script>
+</body>
+</html>
